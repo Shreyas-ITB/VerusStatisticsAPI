@@ -73,8 +73,6 @@ def get_ticker_by_currency_id(currency_id):
         return currency["ticker"]
     return "Currency not found"
 
-import requests
-
 def get_imports(currency: str, fromblk: int, toblk: int):
     url = 'https://rpc.vrsc.komodefi.com/'
 
