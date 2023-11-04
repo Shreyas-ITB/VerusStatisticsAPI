@@ -73,6 +73,26 @@ def get_ticker_by_currency_id(currency_id):
         return currency["ticker"]
     return "Currency not found"
 
+import requests
+
+def get_imports(currency: str, fromblk: int, toblk: int):
+    url = 'https://rpc.vrsc.komodefi.com/'
+
+    json_data = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getimports",
+        "params": [currency, fromblk, toblk]
+    }
+
+    response = requests.post(url, json=json_data)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": "Failed to retrieve data"}
+
+
 def get_rawtransaction(txid):
     requestData = {
         "method": "post",
@@ -579,5 +599,13 @@ def getvethvethreserveprice():
     resp = get_reserve_eth_price(reserves)
     return jsonify(resp, "success: True")
 
+@app.route('/getvolume/<currency>/<fromblk>/<toblk>', methods=['GET'])
+def routegetimports(currency: str, fromblk: int, toblk: int):
+    newfromblk = int(fromblk)
+    newtoblk = int(toblk)
+    newcurrency = str(currency)
+    response = get_imports(newcurrency, newfromblk, newtoblk)
+    return jsonify(response)
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run('0.0.0.0', PORT)
