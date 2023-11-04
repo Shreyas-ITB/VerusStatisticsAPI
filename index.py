@@ -597,7 +597,7 @@ def getvethvethreserveprice():
     resp = get_reserve_eth_price(reserves)
     return jsonify(resp, "success: True")
 
-@app.route('/getvolume/<currency>/<fromblk>/<toblk>', methods=['GET'])
+@app.route('/getimports/<currency>/<fromblk>/<toblk>', methods=['GET'])
 def routegetimports(currency: str, fromblk: int, toblk: int):
     newfromblk = int(fromblk)
     newtoblk = int(toblk)
