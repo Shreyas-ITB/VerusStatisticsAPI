@@ -7,7 +7,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 
 ## Endpoints
 
-- ```/ ``` Returns the API is running.
+- `/ ` Returns the API is running.
 - ```/price/<ticker> # Usage /price/USD or /price/INR``` Returns the price of VRSC in different currencies and values along with the 24 hour change.
 - ```/difficulty``` Returns the current network difficulty and formats it into readable form.
 - ```/getcurrencystate/<currency>/<height> # Usage /getcurrencystate/MKR.vETH/2757830,2775413,200 or getcurrencystate/DAI.vETH/2757830,2775413,200``` Returns the currency state of bridged coins.
