@@ -50,4 +50,4 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 More API Endpoints will be added in the future..
 
 ## Contributors
-[![](https://avatars.githubusercontent.com/u/148117518?v=4?size=30)](https://github.com/ShreyaPrincess)
+[![](https://avatars.githubusercontent.com/u/148117518?v=4?size=10)](https://github.com/ShreyaPrincess)
