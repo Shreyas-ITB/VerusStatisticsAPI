@@ -8,18 +8,18 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 ## Endpoints
 
 - `/ ` Returns the API is running.
-- ```/price/<ticker> # Usage /price/USD or /price/INR``` Returns the price of VRSC in different currencies and values along with the 24 hour change.
+- ```/price/<ticker>``` Returns the price of VRSC in different currencies and values along with the 24 hour change.
 - ```/difficulty``` Returns the current network difficulty and formats it into readable form.
-- ```/getcurrencystate/<currency>/<height> # Usage /getcurrencystate/MKR.vETH/2757830,2775413,200 or getcurrencystate/DAI.vETH/2757830,2775413,200``` Returns the currency state of bridged coins.
-- ```/getrawtransaction/<txid> # Usage /getrawtransaction/c7c49f45487206b3d1991108945da9e16191896af5ed38673db1b5014c8a59ed``` Returns the raw transaction details.
-- ```/decoderawtransaction/<hex> # Usage /decoderawtransaction/c7c49f45487206b3d1991108945da9e16191896af5ed38673db1b5014c8a59ed``` Returns the decoded data of a raw transaction.
+- ```/getcurrencystate/<currency>/<height>``` Returns the currency state of bridged coins.
+- ```/getrawtransaction/<txid>``` Returns the raw transaction details.
+- ```/decoderawtransaction/<hex>d``` Returns the decoded data of a raw transaction.
 - ```/blockcount``` Returns the block height of verus.
 - ```/getcurrencies``` Returns the available currencies on the bridge network.
 - ```/dai_reserves``` Returns the reserve value of DAI on the bridge network.
 - ```/vrsc_reserves``` Returns the reserve value of VRSC on the bridge network.
 - ```/mkr_reserves``` Returns the reserve value of MKR on the bridge network.
 - ```/eth_reserves``` Returns the reserve value of vETH on the bridge network.
-- ```/getticker/<currency_id> # Usage /getticker/i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV``` Returns the ticker of the given currencyID.
+- ```/getticker/<currency_id>``` Returns the ticker of the given currencyID.
 - ```/fetchblockhash/<longest_chain>``` Returns the fetched blockhash.
 - ```/fetchtransactiondata/<transaction_id>``` Returns the transaction data of a transaction ID.
 - ```/getmoneysupply``` Returns the money supply of VRSC.
@@ -50,4 +50,4 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 More API Endpoints will be added in the future..
 
 ## Contributors
-![https://avatars.githubusercontent.com/u/148117518?v=4?size=50](https://github.com/ShreyaPrincess)
+[![](https://avatars.githubusercontent.com/u/148117518?v=4?size=50)](https://github.com/ShreyaPrincess)
