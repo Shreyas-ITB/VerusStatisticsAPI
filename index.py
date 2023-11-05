@@ -110,6 +110,36 @@ def get_rawtransaction(txid):
 
     return {"raw_transaction": raw_transaction_data}
 
+def calculate_reserve_balance(currencyid: str, currency: str, fromblk: int, toblk: int):
+    total_reservein = 0.0
+    total_reserveout = 0.0
+    json_data = get_imports(currency, fromblk, toblk)
+
+    try:
+        results = json_data["result"]
+        for result in results:
+            importnotarization = result["importnotarization"]
+            currencystate = importnotarization["currencystate"]
+            currencies = currencystate["currencies"]
+
+            for currency_id, currency_data in currencies.items():
+                if currency_id == str(currencyid):
+                    if "reservein" in currency_data:
+                        total_reservein += currency_data["reservein"]
+                    if "reserveout" in currency_data:
+                        total_reserveout += currency_data["reserveout"]
+        ticker = get_ticker_by_currency_id(str(currencyid))
+        return {
+            "currencyid": ticker,
+            "currency": currency,
+            "reservein": total_reservein,
+            "reserveout": total_reserveout
+        }
+    except KeyError as e:
+        return {"error": f"KeyError: {str(e)}"}
+    except Exception as e:
+        return {"error": str(e)}
+
 def decode_rawtransaction(hex):
     requestData = {
         "method": "post",
@@ -604,6 +634,15 @@ def routegetimports(currency: str, fromblk: int, toblk: int):
     newcurrency = str(currency)
     response = get_imports(newcurrency, newfromblk, newtoblk)
     return jsonify(response)
+
+@app.route('/getvolume/<currencyid>/<currency>/<fromblk>/<toblk>')
+def routegetvolume(currencyid: str, currency: str, fromblk: int, toblk: int):
+    newfromblk = int(fromblk)
+    newtoblk = int(toblk)
+    newcurrency = str(currency)
+    newcurrencyid = str(currencyid)
+    response = calculate_reserve_balance(newcurrencyid, newcurrency, newfromblk, newtoblk)
+    return jsonify(response, "success: True")
 
 if __name__ == '__main__':
     app.run('0.0.0.0', PORT)
