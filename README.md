@@ -46,7 +46,8 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 - ```/getvrsc_vethreserveprice``` Returns VRSC price in vETH reserve.
 - ```/getmkrveth_vethreserveprice``` Returns MKR.veth price in vETH reserve.
 - ```/getveth_vethreserveprice``` Returns vETH price in vETH reserve.
-- ```/getimports/<currency>/<fromblock>/<toblock>``` Returns the volume and import details of the currency from block to block. 
+- ```/getimports/<currency>/<fromblock>/<toblock>``` Returns the import details of the currency from block to block.
+- ```/getvolume/<currencyid>/<currency>/<fromblk>/<toblk>``` Returns the total reservein and reserveout volumes of a specific currency on the bridge.
 
 More API Endpoints will be added in the future..
 
