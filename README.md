@@ -48,6 +48,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 - ```/getveth_vethreserveprice``` Returns vETH price in vETH reserve.
 - ```/getimports/<currency>/<fromblock>/<toblock>``` Returns the import details of the currency from block to block.
 - ```/getvolume/<currencyid>/<currency>/<fromblk>/<toblk>``` Returns the total reservein and reserveout volumes of a specific currency on the bridge.
+- ```/gettotalvolume/<currency>/<fromblk>/<toblk>``` Returns the total reservein, reserveout, primarycurrencyin, primarycurrencyout and conversionfees of all the currencies present in the basket
 
 More API Endpoints will be added in the future..
 
