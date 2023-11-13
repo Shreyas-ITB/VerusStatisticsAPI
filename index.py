@@ -110,6 +110,40 @@ def get_rawtransaction(txid):
 
     return {"raw_transaction": raw_transaction_data}
 
+def calculate_total_balances(currency: str, fromblk: int, toblk: int):
+    total_reservein = 0.0
+    total_reserveout = 0.0
+    total_conversion_fees = 0.0
+    total_primary_currency_in = 0.0
+    total_primary_currency_out = 0.0
+    json_data = get_imports(currency, fromblk, toblk)
+
+    try:
+        results = json_data["result"]
+        for result in results:
+            importnotarization = result["importnotarization"]
+            currencystate = importnotarization["currencystate"]
+            currencies = currencystate["currencies"]
+
+            for currency_data in currencies.values():
+                total_reservein += currency_data.get("reservein", 0.0)
+                total_reserveout += currency_data.get("reserveout", 0.0)
+                total_conversion_fees += currency_data.get("conversionfees", 0.0)
+                total_primary_currency_in += currency_data.get("primarycurrencyin", 0.0)
+                total_primary_currency_out += currency_data.get("primarycurrencyout", 0.0)
+
+        return {
+            "total_reservein": total_reservein,
+            "total_reserveout": total_reserveout,
+            "total_conversion_fees": total_conversion_fees,
+            "total_primary_currency_in": total_primary_currency_in,
+            "total_primary_currency_out": total_primary_currency_out,
+        }
+    except KeyError as e:
+        return {"error": f"KeyError: {str(e)}"}
+    except Exception as e:
+        return {"error": str(e)}
+
 def calculate_reserve_balance(currencyid: str, currency: str, fromblk: int, toblk: int):
     total_reservein = 0.0
     total_reserveout = 0.0
@@ -642,6 +676,14 @@ def routegetvolume(currencyid: str, currency: str, fromblk: int, toblk: int):
     newcurrency = str(currency)
     newcurrencyid = str(currencyid)
     response = calculate_reserve_balance(newcurrencyid, newcurrency, newfromblk, newtoblk)
+    return jsonify(response, "success: True")
+
+@app.route('/gettotalvolume/<currency>/<fromblk>/<toblk>')
+def routegettotalvolume(currency: str, fromblk: int, toblk: int):
+    newfromblk = int(fromblk)
+    newtoblk = int(toblk)
+    newcurrency = str(currency)
+    response = calculate_total_balances(newcurrency, newfromblk, newtoblk)
     return jsonify(response, "success: True")
 
 if __name__ == '__main__':
