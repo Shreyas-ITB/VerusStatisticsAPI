@@ -5,6 +5,10 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 ## API URL
 ``http://116.203.53.84:5000``
 
+## Information
+
+If you want to fetch the 24 hour data, you can add the base block interval (fromblock) and then increase the current block interval (toblock) by 1440, just add 1440 with the number your going to use for the current block interval and you will get the 24 hour results.
+
 ## Endpoints
 
 - `/ ` Returns the API is running.
@@ -23,6 +27,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 - ```/fetchblockhash/<longest_chain>``` Returns the fetched blockhash.
 - ```/fetchtransactiondata/<transaction_id>``` Returns the transaction data of a transaction ID.
 - ```/getmoneysupply``` Returns the money supply of VRSC.
+- ```/getrawmempool``` Returns all the unconfirmed transactions on the bridge.
 - ```/distribution``` Returns the distribution of VRSC in the network.
 - ```/getnethashpower``` Returns the network hashrate and formats it into readable form.
 - ```/getweight``` Returns the weights of the currencies on the bridge.
@@ -48,7 +53,8 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 - ```/getveth_vethreserveprice``` Returns vETH price in vETH reserve.
 - ```/getimports/<currency>/<fromblock>/<toblock>``` Returns the import details of the currency from block to block.
 - ```/getvolume/<currencyid>/<currency>/<fromblk>/<toblk>``` Returns the total reservein and reserveout volumes of a specific currency on the bridge.
-- ```/gettotalvolume/<currency>/<fromblk>/<toblk>``` Returns the total reservein, reserveout, primarycurrencyin, primarycurrencyout and conversionfees of all the currencies present in the basket
+- ```/gettotalvolume/<currency>/<fromblk>/<toblk>``` Returns the total reservein, reserveout, primarycurrencyin, primarycurrencyout and conversionfees of all the currencies present in the basket.
+- ```/gettransactions/<currency>/<fromblk>/<toblk>``` Returns all the transactions of a specific basket in the given block interval.
 
 More API Endpoints will be added in the future..
 
