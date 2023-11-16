@@ -110,40 +110,6 @@ def get_rawtransaction(txid):
 
     return {"raw_transaction": raw_transaction_data}
 
-def calculate_total_balances(currency: str, fromblk: int, toblk: int):
-    total_reservein = 0.0
-    total_reserveout = 0.0
-    total_conversion_fees = 0.0
-    total_primary_currency_in = 0.0
-    total_primary_currency_out = 0.0
-    json_data = get_imports(currency, fromblk, toblk)
-
-    try:
-        results = json_data["result"]
-        for result in results:
-            importnotarization = result["importnotarization"]
-            currencystate = importnotarization["currencystate"]
-            currencies = currencystate["currencies"]
-
-            for currency_data in currencies.values():
-                total_reservein += currency_data.get("reservein", 0.0)
-                total_reserveout += currency_data.get("reserveout", 0.0)
-                total_conversion_fees += currency_data.get("conversionfees", 0.0)
-                total_primary_currency_in += currency_data.get("primarycurrencyin", 0.0)
-                total_primary_currency_out += currency_data.get("primarycurrencyout", 0.0)
-
-        return {
-            "total_reservein": total_reservein,
-            "total_reserveout": total_reserveout,
-            "total_conversion_fees": total_conversion_fees,
-            "total_primary_currency_in": total_primary_currency_in,
-            "total_primary_currency_out": total_primary_currency_out,
-        }
-    except KeyError as e:
-        return {"error": f"KeyError: {str(e)}"}
-    except Exception as e:
-        return {"error": str(e)}
-
 def calculate_reserve_balance(currencyid: str, currency: str, fromblk: int, toblk: int):
     total_reservein = 0.0
     total_reserveout = 0.0
@@ -338,6 +304,56 @@ def get_reserve_mkr_price(reserves):
 
 def get_reserve_eth_price(reserves):
     return round(eth_reserves() / reserves, 6) if reserves != 0 else 0.0
+
+def calculate_total_balances(currency: str, fromblk: int, toblk: int):
+    total_reservein = 0.0
+    total_reserveout = 0.0
+    total_conversion_fees = 0.0
+    total_primary_currency_in = 0.0
+    total_primary_currency_out = 0.0
+    json_data = get_imports(currency, fromblk, toblk)
+
+    try:
+        results = json_data["result"]
+        for result in results:
+            importnotarization = result["importnotarization"]
+            currencystate = importnotarization["currencystate"]
+            currencies = currencystate["currencies"]
+
+            for currency_data in currencies.values():
+                total_reservein += currency_data.get("reservein", 0.0)
+                total_reserveout += currency_data.get("reserveout", 0.0)
+                total_conversion_fees += currency_data.get("conversionfees", 0.0)
+                total_primary_currency_in += currency_data.get("primarycurrencyin", 0.0)
+                total_primary_currency_out += currency_data.get("primarycurrencyout", 0.0)
+        reserves = dai_reserves()
+        resp = get_reserve_dai_price(reserves)
+
+        return {
+            "DAI price in DAI reserves": resp,
+            "total_reservein": f"{int(resp) * total_reservein} DAI",
+            "total_reserveout": f"{int(resp) * total_reserveout} DAI",
+            "total_conversion_fees": f"{int(resp) * total_conversion_fees} DAI",
+            "total_primary_currency_in": f"{int(resp) * total_primary_currency_in} DAI",
+            "total_primary_currency_out": f"{int(resp) * total_primary_currency_out} DAI",
+        }
+    except KeyError as e:
+        return {"error": f"KeyError: {str(e)}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+def extract_transfers(currency: str, fromblk: int, toblk: int):
+    transfers_list = []
+    json_data = get_imports(currency, fromblk, toblk)
+    try:
+        results = json_data.get("result", [])
+        for result in results:
+            transfers = result.get("transfers", [])
+            transfers_list.extend(transfers)
+
+        return transfers_list
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.route("/")
 def main():    
@@ -686,5 +702,13 @@ def routegettotalvolume(currency: str, fromblk: int, toblk: int):
     response = calculate_total_balances(newcurrency, newfromblk, newtoblk)
     return jsonify(response, "success: True")
 
+@app.route('/gettransactions/<currency>/<fromblk>/<toblk>', methods=['GET'])
+def routegettxns(currency: str, fromblk: int, toblk: int):
+    newfromblk = int(fromblk)
+    newtoblk = int(toblk)
+    newcurrency = str(currency)
+    response = extract_transfers(newcurrency, newfromblk, newtoblk)
+    return jsonify(response)
+
 if __name__ == '__main__':
-    app.run('0.0.0.0', PORT)
+    app.run(debug=True)
