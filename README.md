@@ -16,7 +16,7 @@ If you want to fetch the 24 hour data, you can add the base block interval (from
 - ```/difficulty``` Returns the current network difficulty and formats it into readable form.
 - ```/getcurrencystate/<currency>/<height>``` Returns the currency state of bridged coins.
 - ```/getrawtransaction/<txid>``` Returns the raw transaction details.
-- ```/decoderawtransaction/<hex>d``` Returns the decoded data of a raw transaction.
+- ```/decoderawtransaction/<hex>``` Returns the decoded data of a raw transaction.
 - ```/blockcount``` Returns the block height of verus.
 - ```/getcurrencies``` Returns the available currencies on the bridge network.
 - ```/dai_reserves``` Returns the reserve value of DAI on the bridge network.
