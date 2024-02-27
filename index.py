@@ -1,9 +1,12 @@
 from flask import Flask, jsonify
 import re
-import requests
+import requests, os
+from dotenv import load_dotenv, find_dotenv
 
 app = Flask(__name__)
-PORT = 5000
+load_dotenv(find_dotenv())
+RPCURL = os.environ.get("RPCURL")
+PORT = os.environ.get("APIPORT")
 
 # Placeholder data
 latestblock = []
@@ -17,7 +20,14 @@ arr_currencies = [
     {"currencyid": "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV", "ticker": "VRSC"},
     {"currencyid": "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM", "ticker": "DAI.vETH"},
     {"currencyid": "iCkKJuJScy4Z6NSDK7Mt42ZAB2NEnAE1o4", "ticker": "MKR.vETH"},
-    {"currencyid": "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X", "ticker": "vETH"}
+    {"currencyid": "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X", "ticker": "vETH"},
+    {"currencyid": "iJczmut8fHgRvVxaNfEPm7SkgJLDFtPcrK", "ticker": "LINK.vETH"},
+    {"currencyid": "iC5TQFrFXSYLQGkiZ8FYmZHFJzaRF5CYgE", "ticker": "EURC.vETH"},
+    {"currencyid": "iS3NjE3XRYWoHRoovpLhFnbDraCq7NFStf", "ticker": "WBTC.vETH"},
+    {"currencyid": "i9oCSqKALwJtcv49xUKS2U2i79h1kX6NEY", "ticker": "USDT.vETH"},
+    {"currencyid": "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd", "ticker": "USDC.vETH"},
+    {"currencyid": "iEnQEjjozf1HZkqFT9U4NKnzz1iGZ7LbJ4", "ticker": "TRAC.vETH"},
+    {"currencyid": "iNtUUdjsqV34snGZJerAvPLaojo6tV9sfd", "ticker": "MARS4.vETH"}
 ]
 
 def send_request(method, url, headers, data):
@@ -28,7 +38,7 @@ def send_request(method, url, headers, data):
 def get_bridge_currency():
     requestData = {
         "method": "post",
-        "url": "https://rpc.vrsc.komodefi.com",
+        "url": RPCURL,
         "headers": {"Content-Type": "application/json"},
         "data": {
             "method": "getcurrency",
@@ -73,8 +83,14 @@ def get_ticker_by_currency_id(currency_id):
         return currency["ticker"]
     return "Currency not found"
 
+def get_currencyid_by_ticker(ticker):
+    currency = next((item for item in arr_currencies if item["ticker"] == ticker), None)
+    if currency:
+        return currency["currencyid"]
+    return "Currency not found"
+
 def get_imports(currency: str, fromblk: int, toblk: int):
-    url = 'https://rpc.vrsc.komodefi.com/'
+    url = RPCURL
 
     json_data = {
         "jsonrpc": "1.0",
@@ -94,7 +110,7 @@ def get_imports(currency: str, fromblk: int, toblk: int):
 def get_rawtransaction(txid):
     requestData = {
         "method": "post",
-        "url": "https://rpc.vrsc.komodefi.com",
+        "url": RPCURL,
         "headers": {"Content-Type": "application/json"},
         "data": {
             "method": "getrawtransaction",
@@ -143,7 +159,7 @@ def calculate_reserve_balance(currencyid: str, currency: str, fromblk: int, tobl
 def decode_rawtransaction(hex):
     requestData = {
         "method": "post",
-        "url": "https://rpc.vrsc.komodefi.com",
+        "url": RPCURL,
         "headers": {"Content-Type": "application/json"},
         "data": {
             "method": "decoderawtransaction",
@@ -239,7 +255,7 @@ def fetchBlocksAndProcess(num_blocks, block_hash):
     blocks_processed = 0
     request_config_get_block = {
         "method": "post",
-        "url": "https://rpc.vrsc.komodefi.com",
+        "url": RPCURL,
         "headers": {"Content-Type": "application/json"},
         "data": {
             "method": "getblock",
@@ -441,6 +457,11 @@ def getethreserves():
 def get_ticker_route(currency_id):
     ticker = get_ticker_by_currency_id(currency_id)
     return jsonify({"ticker": ticker})
+
+@app.route('/getcurrid/<ticker>', methods=['GET'])
+def get_currid_route(ticker):
+    currid = get_currencyid_by_ticker(ticker)
+    return jsonify({"currencyid": currid})
 
 @app.route('/getrawmempool', methods=['GET'])
 def get_rawmempool_route():
