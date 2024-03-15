@@ -364,8 +364,12 @@ def extract_transfers(currency: str, fromblk: int, toblk: int):
     try:
         results = json_data.get("result", [])
         for result in results:
+            exporttxid = result.get("import", [])
+            exporttxid = exporttxid['exporttxid']
+            importtxid = result.get("importtxid", [])
             transfers = result.get("transfers", [])
-            transfers_list.extend(transfers)
+            resp = (transfers, exporttxid, importtxid)
+            transfers_list.extend(resp)
 
         return transfers_list
     except Exception as e:
@@ -730,6 +734,181 @@ def routegettxns(currency: str, fromblk: int, toblk: int):
     newcurrency = str(currency)
     response = extract_transfers(newcurrency, newfromblk, newtoblk)
     return jsonify(response)
+
+@app.route('/market/allTickers', methods=['GET'])
+def routegetvrscdai():
+    reserves = dai_reserves()
+    newreserves = vrsc_reserves()
+    mkrreserves = mkr_reserves()
+    ethreserves = eth_reserves()
+    ethprice = get_reserve_eth_price(ethreserves)
+    mkrprice = get_reserve_mkr_price(mkrreserves)
+    vrscprice = get_reserve_vrsc_price(newreserves)
+    daiprice = get_reserve_dai_price(reserves)
+    reservecurrencies = get_bridge_currency()
+    vrsc = next((item for item in reservecurrencies if item["currencyid"] == "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"), None)
+    if vrsc:
+        VRSCBridgeReservePrice = vrsc['priceinreserve']
+    dai = next((item for item in reservecurrencies if item["currencyid"] == "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM"), None)
+    if dai:
+        DAIBridgeReservePrice = dai['priceinreserve']
+    mkr = next((item for item in reservecurrencies if item["currencyid"] == "iCkKJuJScy4Z6NSDK7Mt42ZAB2NEnAE1o4"), None)
+    if mkr:
+        MKRBridgeReservePrice = mkr['priceinreserve']
+    eth = next((item for item in reservecurrencies if item["currencyid"] == "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X"), None)
+    if eth:
+        ETHBridgeReservePrice = eth['priceinreserve']
+    VRSCDAITotalBridgePrice = VRSCBridgeReservePrice + DAIBridgeReservePrice
+    VRSCDAITotalPrice = vrscprice + daiprice
+    VRSCMKRTotalBridgePrice = VRSCBridgeReservePrice + MKRBridgeReservePrice
+    VRSCMKRTotalPrice = vrscprice + mkrprice
+    VRSCETHTotalBridgePrice = VRSCBridgeReservePrice + ETHBridgeReservePrice
+    VRSCETHTotalPrice = vrscprice + ethprice
+    ETHDAITotalBridgePrice = ETHBridgeReservePrice + DAIBridgeReservePrice
+    ETHDAITotalPrice = ethprice + daiprice
+    ETHMKRTotalBridgePrice = ETHBridgeReservePrice + MKRBridgeReservePrice
+    ETHMKRTotalPrice = ethprice + mkrprice
+    ETHVRSCTotalBridgePrice = ETHBridgeReservePrice + VRSCBridgeReservePrice
+    ETHVRSCTotalPrice = ethprice + vrscprice
+    DAIVRSCTotalBridgePrice = DAIBridgeReservePrice + VRSCBridgeReservePrice
+    DAIVRSCTotalPrice = daiprice + vrscprice
+    DAIMKRTotalBridgePrice = DAIBridgeReservePrice + MKRBridgeReservePrice
+    DAIMKRTotalPrice = daiprice + mkrprice
+    DAIETHTotalBridgePrice = DAIBridgeReservePrice + ETHBridgeReservePrice
+    DAIETHTotalPrice = daiprice + ethprice
+    MKRDAITotalBridgePrice = MKRBridgeReservePrice + DAIBridgeReservePrice
+    MKRDAITotalPrice = mkrprice + daiprice
+    MKRVRSCTotalBridgePrice = MKRBridgeReservePrice + VRSCBridgeReservePrice
+    MKRVRSCTotalPrice = mkrprice + vrscprice
+    MKRETHTotalBridgePrice = MKRBridgeReservePrice + ETHBridgeReservePrice
+    MKRETHTotalPrice = mkrprice + ethprice
+    bridgevolume = calculate_total_balances("Bridge.vETH", 2930000, 2940000)
+    response = [
+        {
+            "symbol": "VRSC-DAI",
+            "symbolName": "VRSC-DAI",
+            "DAIPrice": daiprice, 
+            "VRSCPrice": vrscprice,
+            "DAIBridgeReservePrice": DAIBridgeReservePrice,
+            "VRSCBridgeReservePrice": VRSCBridgeReservePrice,
+            "TotalBridgePrice": VRSCDAITotalBridgePrice,
+            "TotalPrice": VRSCDAITotalPrice
+        },
+        {
+            "symbol": "VRSC-MKR",
+            "symbolName": "VRSC-MKR",
+            "MKRPrice": mkrprice,
+            "VRSCPrice": vrscprice,
+            "MKRBridgeReservePrice": MKRBridgeReservePrice,
+            "VRSCBridgeReservePrice": VRSCBridgeReservePrice,
+            "TotalBridgePrice": VRSCMKRTotalBridgePrice,
+            "TotalPrice": VRSCMKRTotalPrice
+
+        },
+        {
+            "symbol": "VRSC-ETH",
+            "symbolName": "VRSC-ETH",
+            "ETHPrice": ethprice,
+            "VRSCPrice": vrscprice,
+            "ETHBridgeReservePrice": ETHBridgeReservePrice,
+            "VRSCBridgeReservePrice": VRSCBridgeReservePrice,
+            "TotalBridgePrice": VRSCETHTotalBridgePrice,
+            "TotalPrice": VRSCETHTotalPrice
+        },
+        {
+            "symbol": "ETH-DAI",
+            "symbolName": "ETH-DAI",
+            "DAIPrice": daiprice,
+            "ETHPrice": ethprice,
+            "DAIBridgeReservePrice": DAIBridgeReservePrice,
+            "ETHBridgeReservePrice": ETHBridgeReservePrice,
+            "TotalBridgePrice": ETHDAITotalBridgePrice,
+            "TotalPrice": ETHDAITotalPrice
+        },
+        {
+            "symbol": "ETH-MKR",
+            "symbolName": "ETH-MKR",
+            "MKRPrice": mkrprice,
+            "ETHPrice": ethprice,
+            "MKRBridgeReservePrice": MKRBridgeReservePrice,
+            "ETHBridgeReservePrice": ETHBridgeReservePrice,
+            "TotalBridgePrice": ETHMKRTotalBridgePrice,
+            "TotalPrice": ETHMKRTotalPrice
+        },
+        {
+            "symbol": "ETH-VRSC",
+            "symbolName": "ETH-VRSC",
+            "VRSCPrice": vrscprice,
+            "ETHPrice": ethprice,
+            "VRSCBridgeReservePrice": VRSCBridgeReservePrice,
+            "ETHBridgeReservePrice": ETHBridgeReservePrice,
+            "TotalBridgePrice": ETHVRSCTotalBridgePrice,
+            "TotalPrice": ETHVRSCTotalPrice
+        },
+        {
+            "symbol": "DAI-MKR",
+            "symbolName": "DAI-MKR",
+            "DAIPrice": daiprice,
+            "MKRPrice": mkrprice,
+            "DAIBridgeReservePrice": DAIBridgeReservePrice,
+            "MKRBridgeReservePrice": MKRBridgeReservePrice,
+            "TotalBridgePrice": DAIMKRTotalBridgePrice,
+            "TotalPrice": DAIMKRTotalPrice
+        },
+        {
+            "symbol": "DAI-ETH",
+            "symbolName": "DAI-ETH",
+            "DAIPrice": daiprice,
+            "ETHPrice": ethprice,
+            "DAIBridgeReservePrice": DAIBridgeReservePrice,
+            "ETHBridgeReservePrice": ETHBridgeReservePrice,
+            "TotalBridgePrice": DAIETHTotalBridgePrice,
+            "TotalPrice": DAIETHTotalPrice
+
+        },
+        {
+            "symbol": "DAI-VRSC",
+            "symbolName": "DAI-VRSC",
+            "DAIPrice": daiprice,
+            "VRSCPrice": vrscprice,
+            "DAIBridgeReservePrice": DAIBridgeReservePrice,
+            "VRSCBridgeReservePrice": VRSCBridgeReservePrice,
+            "TotalBridgePrice": DAIVRSCTotalBridgePrice,
+            "TotalPrice": DAIVRSCTotalPrice
+        },
+        {
+            "symbol": "MKR-ETH",
+            "symbolName": "MKR-ETH",
+            "MKRPrice": mkrprice,
+            "ETHPrice": ethprice,
+            "MKRBridgeReservePrice": MKRBridgeReservePrice,
+            "ETHBridgeReservePrice": ETHBridgeReservePrice,
+            "TotalBridgePrice": MKRETHTotalBridgePrice,
+            "TotalPrice": MKRETHTotalPrice
+        },
+        {
+            "symbol": "MKR-VRSC",
+            "symbolName": "MKR-VRSC",
+            "MKRPrice": mkrprice,
+            "VRSCPrice": vrscprice,
+            "MKRBridgeReservePrice": MKRBridgeReservePrice,
+            "VRSCBridgeReservePrice": VRSCBridgeReservePrice,
+            "TotalBridgePrice": MKRVRSCTotalBridgePrice,
+            "TotalPrice": MKRVRSCTotalPrice
+        },
+        {
+            "symbol": "MKR-DAI",
+            "symbolName": "MKR-DAI",
+            "DAIPrice": daiprice,
+            "MKRPrice": mkrprice,
+            "DAIBridgeReservePrice": DAIBridgeReservePrice,
+            "MKRBridgeReservePrice": MKRBridgeReservePrice,
+            "TotalBridgePrice": MKRDAITotalBridgePrice,
+            "TotalPrice": MKRDAITotalPrice
+        },
+    {"BridgeVolume": bridgevolume}
+    ]
+    return jsonify(response, "success: True")
 
 if __name__ == '__main__':
     app.run(debug=True)
