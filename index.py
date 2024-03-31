@@ -950,7 +950,7 @@ def routegetvrscdai():
             "TotalBridgePrice": f"{MKRDAITotalBridgePrice * mkrprice} MKR",
             "TotalPrice": f"{MKRDAITotalPrice * mkrprice} MKR"
         },
-    {"Totsl Bridge Balances": bridgevolume},
+    {"Total Bridge Balances": bridgevolume},
     {"24hr Currency Volume": bidgereserves},
     ]
     return jsonify(response, "success: True")
