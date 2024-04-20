@@ -825,8 +825,12 @@ def routegetvrscdai():
     MKRVRSCTotalPrice = mkrprice + vrscprice
     MKRETHTotalBridgePrice = MKRBridgeReservePrice + ETHBridgeReservePrice
     MKRETHTotalPrice = mkrprice + ethprice
-    bridgevolume = calculate_total_balances("Bridge.vETH", 2930000, 2940000)
-    bidgereserves = load_from_json()
+    bridgebalances = calculate_total_balances("Bridge.vETH", 2930000, 2940000)
+    bidgevolume = load_from_json()
+    VRSC = bidgevolume["VRSC"]
+    vETH = bidgevolume["vETH"]
+    MKRvETH = bidgevolume["MKR.vETH"]
+    DAIvETH = bidgevolume["DAI.vETH"]
     response = [
         {
             "symbol": "VRSC-DAI",
@@ -836,7 +840,8 @@ def routegetvrscdai():
             "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * daiprice} DAI",
             "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * daiprice} DAI",
             "TotalBridgePrice": f"{VRSCDAITotalBridgePrice * daiprice} DAI",
-            "TotalPrice": f"{VRSCDAITotalPrice * daiprice} DAI"
+            "TotalPrice": f"{VRSCDAITotalPrice * daiprice} DAI",
+            "PairVolume": f"{VRSC + DAIvETH * daiprice} DAI"
         },
         {
             "symbol": "VRSC-MKR",
@@ -846,7 +851,8 @@ def routegetvrscdai():
             "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
             "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * mkrprice} MKR",
             "TotalBridgePrice": f"{VRSCMKRTotalBridgePrice * mkrprice} MKR",
-            "TotalPrice": f"{VRSCMKRTotalPrice * mkrprice} MKR"
+            "TotalPrice": f"{VRSCMKRTotalPrice * mkrprice} MKR",
+            "PairVolume": f"{VRSC + MKRvETH * mkrprice} MKR"
 
         },
         {
@@ -857,7 +863,8 @@ def routegetvrscdai():
             "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * ethprice} ETH",
             "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * ethprice} ETH",
             "TotalBridgePrice": f"{VRSCETHTotalBridgePrice * ethprice} ETH",
-            "TotalPrice": f"{VRSCETHTotalPrice * ethprice} ETH"
+            "TotalPrice": f"{VRSCETHTotalPrice * ethprice} ETH",
+            "PairVolume": f"{VRSC + vETH * ethprice} ETH"
         },
         {
             "symbol": "ETH-DAI",
@@ -867,7 +874,8 @@ def routegetvrscdai():
             "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * daiprice} DAI",
             "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * daiprice} DAI",
             "TotalBridgePrice": f"{ETHDAITotalBridgePrice * daiprice} DAI",
-            "TotalPrice": f"{ETHDAITotalPrice * daiprice} DAI"
+            "TotalPrice": f"{ETHDAITotalPrice * daiprice} DAI",
+            "PairVolume": f"{vETH + DAIvETH * daiprice} DAI"
         },
         {
             "symbol": "ETH-MKR",
@@ -877,7 +885,8 @@ def routegetvrscdai():
             "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
             "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * mkrprice} MKR",
             "TotalBridgePrice": f"{ETHMKRTotalBridgePrice * mkrprice} MKR",
-            "TotalPrice": f"{ETHMKRTotalPrice * mkrprice} MKR"
+            "TotalPrice": f"{ETHMKRTotalPrice * mkrprice} MKR",
+            "PairVolume": f"{vETH + MKRvETH * mkrprice} MKR"
         },
         {
             "symbol": "ETH-VRSC",
@@ -887,7 +896,8 @@ def routegetvrscdai():
             "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * vrscprice} VRSC",
             "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * vrscprice} VRSC",
             "TotalBridgePrice": f"{ETHVRSCTotalBridgePrice * vrscprice} VRSC",
-            "TotalPrice": f"{ETHVRSCTotalPrice * vrscprice} VRSC"
+            "TotalPrice": f"{ETHVRSCTotalPrice * vrscprice} VRSC",
+            "PairVolume": f"{vETH + VRSC * vrscprice} VRSC"
         },
         {
             "symbol": "DAI-MKR",
@@ -897,7 +907,8 @@ def routegetvrscdai():
             "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * mkrprice} MKR",
             "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
             "TotalBridgePrice": F"{DAIMKRTotalBridgePrice * mkrprice} MKR",
-            "TotalPrice": F"{DAIMKRTotalPrice * mkrprice} MKR"
+            "TotalPrice": F"{DAIMKRTotalPrice * mkrprice} MKR",
+            "PairVolume": f"{DAIvETH + MKRvETH * mkrprice} MKR"
         },
         {
             "symbol": "DAI-ETH",
@@ -907,7 +918,8 @@ def routegetvrscdai():
             "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * ethprice} ETH",
             "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * ethprice} ETH",
             "TotalBridgePrice": f"{DAIETHTotalBridgePrice * ethprice} ETH",
-            "TotalPrice": f"{DAIETHTotalPrice * ethprice} ETH"
+            "TotalPrice": f"{DAIETHTotalPrice * ethprice} ETH",
+            "PairVolume": f"{DAIvETH + vETH * ethprice} ETH"
 
         },
         {
@@ -918,7 +930,8 @@ def routegetvrscdai():
             "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * vrscprice} VRSC",
             "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * vrscprice} VRSC",
             "TotalBridgePrice": f"{DAIVRSCTotalBridgePrice * vrscprice} VRSC",
-            "TotalPrice": f"{DAIVRSCTotalPrice * vrscprice} VRSC"
+            "TotalPrice": f"{DAIVRSCTotalPrice * vrscprice} VRSC",
+            "PairVolume": f"{DAIvETH + VRSC * vrscprice} VRSC"
         },
         {
             "symbol": "MKR-ETH",
@@ -928,7 +941,8 @@ def routegetvrscdai():
             "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * ethprice} ETH",
             "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * ethprice} ETH",
             "TotalBridgePrice": f"{MKRETHTotalBridgePrice * ethprice} ETH",
-            "TotalPrice": f"{MKRETHTotalPrice * ethprice} ETH"
+            "TotalPrice": f"{MKRETHTotalPrice * ethprice} ETH",
+            "PairVolume": f"{MKRvETH + vETH * ethprice} ETH"
         },
         {
             "symbol": "MKR-VRSC",
@@ -938,7 +952,8 @@ def routegetvrscdai():
             "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * vrscprice} VRSC",
             "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * vrscprice} VRSC",
             "TotalBridgePrice": f"{MKRVRSCTotalBridgePrice * vrscprice} VRSC",
-            "TotalPrice": f"{MKRVRSCTotalPrice * vrscprice} VRSC"
+            "TotalPrice": f"{MKRVRSCTotalPrice * vrscprice} VRSC",
+            "PairVolume": f"{MKRvETH + VRSC * vrscprice} VRSC"
         },
         {
             "symbol": "MKR-DAI",
@@ -948,10 +963,11 @@ def routegetvrscdai():
             "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * mkrprice} MKR",
             "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
             "TotalBridgePrice": f"{MKRDAITotalBridgePrice * mkrprice} MKR",
-            "TotalPrice": f"{MKRDAITotalPrice * mkrprice} MKR"
+            "TotalPrice": f"{MKRDAITotalPrice * mkrprice} MKR",
+            "PairVolume": f"{MKRvETH + DAIvETH * mkrprice} MKR"
         },
-    {"Total Bridge Balances": bridgevolume},
-    {"24hr Currency Volume": bidgereserves},
+    {"Totsl Bridge Balances": bridgebalances},
+    {"24hr Currency Volume": bidgevolume},
     ]
     return jsonify(response, "success: True")
 
