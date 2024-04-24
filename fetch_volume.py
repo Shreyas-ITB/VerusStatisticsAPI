@@ -57,6 +57,7 @@ def aggregate_reserve_data(currencyid, height):
             currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
             data['total_reserve'] += currency_info['reservein'] + currency_info['reserveout']
         height = str(int(height) - 1)
+        print(f"Fetching stats for block {height}")
     
     # Fetch currency names and structure the result
     result = {}
@@ -78,7 +79,7 @@ def fetch_and_save_data():
             bidgereserves = aggregate_reserve_data(currency, str(height))
             save_to_json(bidgereserves)
             print("Data saved to JSON file.")
-        time.sleep(120)  # Sleep for 30 minutes
+        time.sleep(120)  # Sleep for 120 seconds
 
 # Start a separate thread to periodically fetch and save data
 fetch_thread = threading.Thread(target=fetch_and_save_data)
