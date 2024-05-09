@@ -28,7 +28,9 @@ arr_currencies = [
     {"currencyid": "iC5TQFrFXSYLQGkiZ8FYmZHFJzaRF5CYgE", "ticker": "EURC.vETH"},
     {"currencyid": "iS3NjE3XRYWoHRoovpLhFnbDraCq7NFStf", "ticker": "WBTC.vETH"},
     {"currencyid": "i9oCSqKALwJtcv49xUKS2U2i79h1kX6NEY", "ticker": "USDT.vETH"},
-    {"currencyid": "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd", "ticker": "USDC.vETH"},
+    {"currencyid": "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd", "ticker": "tBTC"},
+    {"currencyid": "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU", "ticker": "Pure"},
+    # {"currencyid": "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd", "ticker": "USDC.vETH"},
     {"currencyid": "iEnQEjjozf1HZkqFT9U4NKnzz1iGZ7LbJ4", "ticker": "TRAC.vETH"},
     {"currencyid": "iNtUUdjsqV34snGZJerAvPLaojo6tV9sfd", "ticker": "MARS4.vETH"}
 ]
@@ -38,7 +40,7 @@ def send_request(method, url, headers, data):
     response.raise_for_status()
     return response.json()
 
-def get_bridge_currency():
+def get_bridge_currency_bridgeveth():
     requestData = {
         "method": "post",
         "url": RPCURL,
@@ -52,30 +54,93 @@ def get_bridge_currency():
     response = send_request(**requestData)
     return response["result"]["bestcurrencystate"]["reservecurrencies"]
 
+def get_bridge_currency_racecondition():
+    requestData = {
+        "method": "post",
+        "url": RPCURL,
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrency",
+            "params": ["RaceCondition"],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+    return response["result"]["bestcurrencystate"]["reservecurrencies"]
+
+def get_bridge_currency_pure():
+    requestData = {
+        "method": "post",
+        "url": RPCURL,
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrency",
+            "params": ["Pure"],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+    return response["result"]["bestcurrencystate"]["reservecurrencies"]
+
+def get_bridge_currency_switch():
+    requestData = {
+        "method": "post",
+        "url": RPCURL,
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrency",
+            "params": ["Switch"],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+    return response["result"]["bestcurrencystate"]["reservecurrencies"]
+
 def dai_reserves():
-    reservecurrencies = get_bridge_currency()
+    reservecurrencies = get_bridge_currency_bridgeveth()
     dai = next((item for item in reservecurrencies if item["currencyid"] == "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM"), None)
     if dai:
         return dai["reserves"]
     return None
 
 def vrsc_reserves():
-    reservecurrencies = get_bridge_currency()
+    reservecurrencies = get_bridge_currency_bridgeveth()
     vrsc = next((item for item in reservecurrencies if item["currencyid"] == "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"), None)
     if vrsc:
         return vrsc["reserves"]
     return None
 
 def mkr_reserves():
-    reservecurrencies = get_bridge_currency()
+    reservecurrencies = get_bridge_currency_bridgeveth()
     mkr = next((item for item in reservecurrencies if item["currencyid"] == "iCkKJuJScy4Z6NSDK7Mt42ZAB2NEnAE1o4"), None)
     if mkr:
         return mkr["reserves"]
     return None
 
 def eth_reserves():
-    reservecurrencies = get_bridge_currency()
+    reservecurrencies = get_bridge_currency_bridgeveth()
     eth = next((item for item in reservecurrencies if item["currencyid"] == "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X"), None)
+    if eth:
+        return eth["reserves"]
+    return None
+
+def pure_reserves():
+    reservecurrencies = get_bridge_currency_pure()
+    eth = next((item for item in reservecurrencies if item["currencyid"] == "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU"), None)
+    if eth:
+        return eth["reserves"]
+    return None
+
+def tbtc_reserves():
+    reservecurrencies = get_bridge_currency_switch()
+    eth = next((item for item in reservecurrencies if item["currencyid"] == "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd"), None)
+    if eth:
+        return eth["reserves"]
+    return None
+
+def eurc_reserves():
+    reservecurrencies = get_bridge_currency_switch()
+    eth = next((item for item in reservecurrencies if item["currencyid"] == "iC5TQFrFXSYLQGkiZ8FYmZHFJzaRF5CYgE"), None)
     if eth:
         return eth["reserves"]
     return None
@@ -92,14 +157,14 @@ def get_currencyid_by_ticker(ticker):
         return currency["currencyid"]
     return "Currency not found"
 
-def get_imports(currency: str, fromblk: int, toblk: int):
+def get_imports(currency: str):
     url = RPCURL
 
     json_data = {
         "jsonrpc": "1.0",
         "id": "curltest",
         "method": "getimports",
-        "params": [currency, fromblk, toblk]
+        "params": [currency]
     }
 
     response = requests.post(url, json=json_data)
@@ -128,10 +193,10 @@ def get_rawtransaction(txid):
 
     return {"raw_transaction": raw_transaction_data}
 
-def calculate_reserve_balance(currencyid: str, currency: str, fromblk: int, toblk: int):
+def calculate_reserve_balance(currencyid: str, currency: str):
     total_reservein = 0.0
     total_reserveout = 0.0
-    json_data = get_imports(currency, fromblk, toblk)
+    json_data = get_imports(currency)
 
     try:
         results = json_data["result"]
@@ -323,13 +388,22 @@ def get_reserve_mkr_price(reserves):
 def get_reserve_eth_price(reserves):
     return round(eth_reserves() / reserves, 6) if reserves != 0 else 0.0
 
-def calculate_total_balances(currency: str, fromblk: int, toblk: int):
+def get_reserve_pure_price(reserves):
+    return round(pure_reserves() / reserves, 6) if reserves != 0 else 0.0
+
+def get_reserve_tbtc_price(reserves):
+    return round(tbtc_reserves() / reserves, 6) if reserves != 0 else 0.0
+
+def get_reserve_eurc_price(reserves):
+    return round(eurc_reserves() / reserves, 6) if reserves != 0 else 0.0
+
+def calculate_total_balances(currency: str):
     total_reservein = 0.0
     total_reserveout = 0.0
     total_conversion_fees = 0.0
     total_primary_currency_in = 0.0
     total_primary_currency_out = 0.0
-    json_data = get_imports(currency, fromblk, toblk)
+    json_data = get_imports(currency)
 
     try:
         results = json_data["result"]
@@ -360,9 +434,9 @@ def calculate_total_balances(currency: str, fromblk: int, toblk: int):
     except Exception as e:
         return {"error": str(e)}
 
-def extract_transfers(currency: str, fromblk: int, toblk: int):
+def extract_transfers(currency: str):
     transfers_list = []
-    json_data = get_imports(currency, fromblk, toblk)
+    json_data = get_imports(currency)
     try:
         results = json_data.get("result", [])
         for result in results:
@@ -473,9 +547,24 @@ def routelatest_block():
     data = latest_block()
     return data
 
-@app.route('/getcurrencies')
-def getcurrencies():
-    reservecurrencies = get_bridge_currency()
+@app.route('/getcurrencies/Bridge.vETH', methods=['GET'])
+def getcurrenciesbridgeveth():
+    reservecurrencies = get_bridge_currency_bridgeveth()
+    return jsonify(reservecurrencies)
+
+@app.route('/getcurrencies/RaceCondition', methods=['GET'])
+def getcurrenciesracecondition():
+    reservecurrencies = get_bridge_currency_racecondition()
+    return jsonify(reservecurrencies)
+
+@app.route('/getcurrencies/Switch', methods=['GET'])
+def getcurrenciesswitch():
+    reservecurrencies = get_bridge_currency_switch()
+    return jsonify(reservecurrencies)
+
+@app.route('/getcurrencies/Pure', methods=['GET'])
+def getcurrenciespure():
+    reservecurrencies = get_bridge_currency_pure()
     return jsonify(reservecurrencies)
 
 @app.route('/dai_reserves', methods=['GET'])
@@ -497,6 +586,21 @@ def getmkrreserves():
 def getethreserves():
     ethreserve = eth_reserves()
     return jsonify(ethreserve)
+
+@app.route('/pure_reserves', methods=['GET'])
+def getpurereserves():
+    purereserve = pure_reserves()
+    return jsonify(purereserve)
+
+@app.route('/tbtc_reserves', methods=['GET'])
+def gettbtcreserves():
+    tbtcreserve = tbtc_reserves()
+    return jsonify(tbtcreserve)
+
+@app.route('/eurc_reserves', methods=['GET'])
+def geteurcreserves():
+    eurcreserve = eurc_reserves()
+    return jsonify(eurcreserve)
 
 @app.route('/getticker/<currency_id>', methods=['GET'])
 def get_ticker_route(currency_id):
@@ -608,15 +712,33 @@ def getnethashpower():
     value = formatHashrate(int(resp.text))
     return jsonify(value, "success: True")
 
-@app.route('/getweight', methods=['GET'])
-def getweight():
-    resp = get_bridge_currency()
+@app.route('/getweight_bridgeveth', methods=['GET'])
+def getweightbridgeveth():
+    resp = get_bridge_currency_bridgeveth()
+    weights = [item['weight'] for item in resp]
+    return jsonify({'weights': weights})
+
+@app.route('/getweight_racecondition', methods=['GET'])
+def getweightracecondition():
+    resp = get_bridge_currency_racecondition()
+    weights = [item['weight'] for item in resp]
+    return jsonify({'weights': weights})
+
+@app.route('/getweight_switch', methods=['GET'])
+def getweightswitch():
+    resp = get_bridge_currency_switch()
+    weights = [item['weight'] for item in resp]
+    return jsonify({'weights': weights})
+
+@app.route('/getweight_pure', methods=['GET'])
+def getweightpure():
+    resp = get_bridge_currency_pure()
     weights = [item['weight'] for item in resp]
     return jsonify({'weights': weights})
 
 @app.route('/getbridgedaiprice', methods=['GET'])
 def getbridgedaireserveprice():
-    reservecurrencies = get_bridge_currency()
+    reservecurrencies = get_bridge_currency_bridgeveth()
     dai = next((item for item in reservecurrencies if item["currencyid"] == "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM"), None)
     if dai:
         return jsonify(dai["priceinreserve"], "success: True")
@@ -624,7 +746,7 @@ def getbridgedaireserveprice():
 
 @app.route('/getbridgevrscprice', methods=['GET'])
 def getbridgevrscreserveprice():
-    reservecurrencies = get_bridge_currency()
+    reservecurrencies = get_bridge_currency_bridgeveth()
     vrsc = next((item for item in reservecurrencies if item["currencyid"] == "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"), None)
     if vrsc:
         return jsonify(vrsc["priceinreserve"], "success: True")
@@ -632,7 +754,7 @@ def getbridgevrscreserveprice():
 
 @app.route('/getbridgemkrprice', methods=['GET'])
 def getbridgemkrreserveprice():
-    reservecurrencies = get_bridge_currency()
+    reservecurrencies = get_bridge_currency_bridgeveth()
     mkr = next((item for item in reservecurrencies if item["currencyid"] == "iCkKJuJScy4Z6NSDK7Mt42ZAB2NEnAE1o4"), None)
     if mkr:
         return jsonify(mkr["priceinreserve"], "success: True")
@@ -640,10 +762,34 @@ def getbridgemkrreserveprice():
 
 @app.route('/getbridgeethprice', methods=['GET'])
 def getbridgeethreserveprice():
-    reservecurrencies = get_bridge_currency()
+    reservecurrencies = get_bridge_currency_bridgeveth()
     eth = next((item for item in reservecurrencies if item["currencyid"] == "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X"), None)
     if eth:
         return jsonify(eth["priceinreserve"], "success: True")
+    return None
+
+@app.route('/getbridgepureprice', methods=['GET'])
+def getbridgepurereserveprice():
+    reservecurrencies = get_bridge_currency_pure()
+    dai = next((item for item in reservecurrencies if item["currencyid"] == "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU"), None)
+    if dai:
+        return jsonify(dai["priceinreserve"], "success: True")
+    return None
+
+@app.route('/getbridgetbtcprice', methods=['GET'])
+def getbridgetbtcreserveprice():
+    reservecurrencies = get_bridge_currency_switch()
+    dai = next((item for item in reservecurrencies if item["currencyid"] == "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd"), None)
+    if dai:
+        return jsonify(dai["priceinreserve"], "success: True")
+    return None
+
+@app.route('/getbridgeeurcprice', methods=['GET'])
+def getbridgeeurcreserveprice():
+    reservecurrencies = get_bridge_currency_switch()
+    dai = next((item for item in reservecurrencies if item["currencyid"] == "iC5TQFrFXSYLQGkiZ8FYmZHFJzaRF5CYgE"), None)
+    if dai:
+        return jsonify(dai["priceinreserve"], "success: True")
     return None
 
 @app.route('/getdaiveth_daireserveprice', methods=['GET'])
@@ -667,6 +813,24 @@ def getmkrvethdaireserveprice():
 @app.route('/getveth_daireserveprice', methods=['GET'])
 def getvethdaireserveprice():
     reserves = eth_reserves()
+    resp = get_reserve_dai_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getpure_daireserveprice', methods=['GET'])
+def getpuredaireserveprice():
+    reserves = pure_reserves()
+    resp = get_reserve_dai_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/gettbtc_daireserveprice', methods=['GET'])
+def gettbtcdaireserveprice():
+    reserves = tbtc_reserves()
+    resp = get_reserve_dai_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/geteurc_daireserveprice', methods=['GET'])
+def geteurcdaireserveprice():
+    reserves = eurc_reserves()
     resp = get_reserve_dai_price(reserves)
     return jsonify(resp, "success: True")
 
@@ -694,6 +858,24 @@ def getvethvrscreserveprice():
     resp = get_reserve_vrsc_price(reserves)
     return jsonify(resp, "success: True")
 
+@app.route('/getpure_vrscreserveprice', methods=['GET'])
+def getpurevrscreserveprice():
+    reserves = pure_reserves()
+    resp = get_reserve_vrsc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/gettbtc_vrscreserveprice', methods=['GET'])
+def gettbtcvrscreserveprice():
+    reserves = tbtc_reserves()
+    resp = get_reserve_vrsc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/geteurc_vrscreserveprice', methods=['GET'])
+def geteurcvrscreserveprice():
+    reserves = eurc_reserves()
+    resp = get_reserve_vrsc_price(reserves)
+    return jsonify(resp, "success: True")
+
 @app.route('/getdaiveth_mkrreserveprice', methods=['GET'])
 def getdaivethmkrreserveprice():
     reserves = dai_reserves()
@@ -715,6 +897,24 @@ def getmkrvethmkrreserveprice():
 @app.route('/getveth_mkrreserveprice', methods=['GET'])
 def getvethmkrreserveprice():
     reserves = eth_reserves()
+    resp = get_reserve_mkr_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getpure_mkrreserveprice', methods=['GET'])
+def getpuremkrreserveprice():
+    reserves = pure_reserves()
+    resp = get_reserve_mkr_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/gettbtc_mkrreserveprice', methods=['GET'])
+def gettbtcmkrreserveprice():
+    reserves = tbtc_reserves()
+    resp = get_reserve_mkr_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/geteurc_mkrreserveprice', methods=['GET'])
+def geteurcmkrreserveprice():
+    reserves = eurc_reserves()
     resp = get_reserve_mkr_price(reserves)
     return jsonify(resp, "success: True")
 
@@ -742,12 +942,156 @@ def getvethvethreserveprice():
     resp = get_reserve_eth_price(reserves)
     return jsonify(resp, "success: True")
 
-@app.route('/getimports/<currency>/<fromblk>/<toblk>', methods=['GET'])
-def routegetimports(currency: str, fromblk: int, toblk: int):
-    newfromblk = int(fromblk)
-    newtoblk = int(toblk)
+@app.route('/getpure_vethreserveprice', methods=['GET'])
+def getpurevethreserveprice():
+    reserves = pure_reserves()
+    resp = get_reserve_eth_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/gettbtc_vethreserveprice', methods=['GET'])
+def gettbtcvethreserveprice():
+    reserves = tbtc_reserves()
+    resp = get_reserve_eth_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/geteurc_vethreserveprice', methods=['GET'])
+def geteurcvethreserveprice():
+    reserves = eurc_reserves()
+    resp = get_reserve_eth_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getdaiveth_purereserveprice', methods=['GET'])
+def getdaivethpurereserveprice():
+    reserves = dai_reserves()
+    resp = get_reserve_pure_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getvrsc_purereserveprice', methods=['GET'])
+def getvrscpurereserveprice():
+    reserves = vrsc_reserves()
+    resp = get_reserve_pure_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getmkrveth_purereserveprice', methods=['GET'])
+def getmkrvethpurereserveprice():
+    reserves = mkr_reserves()
+    resp = get_reserve_pure_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getveth_purereserveprice', methods=['GET'])
+def getvethpurereserveprice():
+    reserves = eth_reserves()
+    resp = get_reserve_pure_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getpure_purereserveprice', methods=['GET'])
+def getpurepurereserveprice():
+    reserves = pure_reserves()
+    resp = get_reserve_pure_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/gettbtc_purereserveprice', methods=['GET'])
+def gettbtcpurereserveprice():
+    reserves = tbtc_reserves()
+    resp = get_reserve_pure_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/geteurc_purereserveprice', methods=['GET'])
+def geteurcpurereserveprice():
+    reserves = eurc_reserves()
+    resp = get_reserve_pure_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getdaiveth_tbtcreserveprice', methods=['GET'])
+def getdaivethtbtcreserveprice():
+    reserves = dai_reserves()
+    resp = get_reserve_tbtc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getvrsc_tbtcreserveprice', methods=['GET'])
+def getvrsctbtcreserveprice():
+    reserves = vrsc_reserves()
+    resp = get_reserve_tbtc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getmkrveth_tbtcreserveprice', methods=['GET'])
+def getmkrvethtbtcreserveprice():
+    reserves = mkr_reserves()
+    resp = get_reserve_tbtc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getveth_tbtcreserveprice', methods=['GET'])
+def getvethtbtcreserveprice():
+    reserves = eth_reserves()
+    resp = get_reserve_tbtc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getpure_tbtcreserveprice', methods=['GET'])
+def getpuretbtcreserveprice():
+    reserves = pure_reserves()
+    resp = get_reserve_tbtc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/gettbtc_tbtcreserveprice', methods=['GET'])
+def gettbtctbtcreserveprice():
+    reserves = tbtc_reserves()
+    resp = get_reserve_tbtc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/geteurc_tbtcreserveprice', methods=['GET'])
+def geteurctbtcreserveprice():
+    reserves = eurc_reserves()
+    resp = get_reserve_tbtc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getdaiveth_eurcreserveprice', methods=['GET'])
+def getdaivetheurcreserveprice():
+    reserves = dai_reserves()
+    resp = get_reserve_eurc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getvrsc_eurcreserveprice', methods=['GET'])
+def getvrsceurcreserveprice():
+    reserves = vrsc_reserves()
+    resp = get_reserve_eurc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getmkrveth_eurcreserveprice', methods=['GET'])
+def getmkrvetheurcreserveprice():
+    reserves = mkr_reserves()
+    resp = get_reserve_eurc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getveth_eurcreserveprice', methods=['GET'])
+def getvetheurcreserveprice():
+    reserves = eth_reserves()
+    resp = get_reserve_eurc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getpure_eurcreserveprice', methods=['GET'])
+def getpureeurcreserveprice():
+    reserves = pure_reserves()
+    resp = get_reserve_eurc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/gettbtc_eurcreserveprice', methods=['GET'])
+def gettbtceurcreserveprice():
+    reserves = tbtc_reserves()
+    resp = get_reserve_eurc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/geteurc_eurcreserveprice', methods=['GET'])
+def geteurceurcreserveprice():
+    reserves = eurc_reserves()
+    resp = get_reserve_eurc_price(reserves)
+    return jsonify(resp, "success: True")
+
+@app.route('/getimports/<currency>/', methods=['GET'])
+def routegetimports(currency: str):
+    # newfromblk = int(fromblk)
+    # newtoblk = int(toblk)
     newcurrency = str(currency)
-    response = get_imports(newcurrency, newfromblk, newtoblk)
+    response = get_imports(newcurrency)
     return jsonify(response)
 
 @app.route('/getvolume/<currencyid>/<currency>/<fromblk>/<toblk>')
@@ -777,60 +1121,101 @@ def routegettxns(currency: str, fromblk: int, toblk: int):
 
 @app.route('/market/allTickers/', methods=['GET'])
 def routegetvrscdai():
-    currency = "Bridge.vETH"
     url = 'https://explorer.verus.io/api/getblockcount'
     height = requests.get(url).text
     reserves = dai_reserves()
     newreserves = vrsc_reserves()
     mkrreserves = mkr_reserves()
     ethreserves = eth_reserves()
+    tbtcreserves = tbtc_reserves()
+    eurcreserves = eurc_reserves()
+    purereserves = pure_reserves()
     ethprice = get_reserve_eth_price(ethreserves)
     mkrprice = get_reserve_mkr_price(mkrreserves)
     vrscprice = get_reserve_vrsc_price(newreserves)
     daiprice = get_reserve_dai_price(reserves)
-    reservecurrencies = get_bridge_currency()
-    vrsc = next((item for item in reservecurrencies if item["currencyid"] == "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"), None)
-    if vrsc:
-        VRSCBridgeReservePrice = vrsc['priceinreserve']
-    dai = next((item for item in reservecurrencies if item["currencyid"] == "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM"), None)
-    if dai:
-        DAIBridgeReservePrice = dai['priceinreserve']
-    mkr = next((item for item in reservecurrencies if item["currencyid"] == "iCkKJuJScy4Z6NSDK7Mt42ZAB2NEnAE1o4"), None)
-    if mkr:
-        MKRBridgeReservePrice = mkr['priceinreserve']
-    eth = next((item for item in reservecurrencies if item["currencyid"] == "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X"), None)
-    if eth:
-        ETHBridgeReservePrice = eth['priceinreserve']
-    VRSCDAITotalBridgePrice = VRSCBridgeReservePrice + DAIBridgeReservePrice
-    VRSCDAITotalPrice = vrscprice + daiprice
-    VRSCMKRTotalBridgePrice = VRSCBridgeReservePrice + MKRBridgeReservePrice
-    VRSCMKRTotalPrice = vrscprice + mkrprice
-    VRSCETHTotalBridgePrice = VRSCBridgeReservePrice + ETHBridgeReservePrice
-    VRSCETHTotalPrice = vrscprice + ethprice
+    tbtcprice = get_reserve_tbtc_price(tbtcreserves)
+    eurcprice = get_reserve_eurc_price(eurcreserves)
+    pureprice = get_reserve_pure_price(purereserves)
+    bridgevethreservecurrencies = get_bridge_currency_bridgeveth()
+    raceconditionreservecurrencies = get_bridge_currency_racecondition()
+    purebasketreservecurrencies = get_bridge_currency_pure()
+    switchbasketreservecurrencies = get_bridge_currency_switch()
+    vrsc = next((item for item in bridgevethreservecurrencies if item["currencyid"] == "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"), None)
+    VRSCBridgeReservePrice = vrsc['priceinreserve']
+    dai = next((item for item in bridgevethreservecurrencies if item["currencyid"] == "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM"), None)
+    DAIBridgeReservePrice = dai['priceinreserve']
+    mkr = next((item for item in bridgevethreservecurrencies if item["currencyid"] == "iCkKJuJScy4Z6NSDK7Mt42ZAB2NEnAE1o4"), None)
+    MKRBridgeReservePrice = mkr['priceinreserve']
+    eth = next((item for item in bridgevethreservecurrencies if item["currencyid"] == "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X"), None)
+    ETHBridgeReservePrice = eth['priceinreserve']
+    pure = next((item for item in purebasketreservecurrencies if item["currencyid"] == "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU"), None)
+    PUREBridgeReservePrice = pure['priceinreserve']
+    tbtc = next((item for item in switchbasketreservecurrencies if item["currencyid"] == "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd"), None)
+    TBTCBridgeReservePrice = tbtc['priceinreserve']
+    eurc = next((item for item in switchbasketreservecurrencies if item["currencyid"] == "iC5TQFrFXSYLQGkiZ8FYmZHFJzaRF5CYgE"), None)
+    EURCBridgeReservePrice = eurc['priceinreserve']
+    
     ETHDAITotalBridgePrice = ETHBridgeReservePrice + DAIBridgeReservePrice
     ETHDAITotalPrice = ethprice + daiprice
     ETHMKRTotalBridgePrice = ETHBridgeReservePrice + MKRBridgeReservePrice
     ETHMKRTotalPrice = ethprice + mkrprice
     ETHVRSCTotalBridgePrice = ETHBridgeReservePrice + VRSCBridgeReservePrice
     ETHVRSCTotalPrice = ethprice + vrscprice
-    DAIVRSCTotalBridgePrice = DAIBridgeReservePrice + VRSCBridgeReservePrice
-    DAIVRSCTotalPrice = daiprice + vrscprice
-    DAIMKRTotalBridgePrice = DAIBridgeReservePrice + MKRBridgeReservePrice
-    DAIMKRTotalPrice = daiprice + mkrprice
-    DAIETHTotalBridgePrice = DAIBridgeReservePrice + ETHBridgeReservePrice
-    DAIETHTotalPrice = daiprice + ethprice
+    ETHPURETotalBridgePrice = ETHBridgeReservePrice + PUREBridgeReservePrice
+    ETHPURETotalPrice = ethprice + pureprice
+    ETHTBTTCTotalBridgePrice = ETHBridgeReservePrice + TBTCBridgeReservePrice
+    ETHTBTTCTotalPrice = ethprice + tbtcprice
+    ETHEURCTotalBridgePrice = ETHBridgeReservePrice + EURCBridgeReservePrice
+    ETHEURCTotalPrice = ethprice + eurcprice
     MKRDAITotalBridgePrice = MKRBridgeReservePrice + DAIBridgeReservePrice
     MKRDAITotalPrice = mkrprice + daiprice
     MKRVRSCTotalBridgePrice = MKRBridgeReservePrice + VRSCBridgeReservePrice
     MKRVRSCTotalPrice = mkrprice + vrscprice
     MKRETHTotalBridgePrice = MKRBridgeReservePrice + ETHBridgeReservePrice
     MKRETHTotalPrice = mkrprice + ethprice
-    bridgebalances = calculate_total_balances("Bridge.vETH", 2930000, 2940000)
+    MKRPURETotalBridgePrice = MKRBridgeReservePrice + PUREBridgeReservePrice
+    MKRPURETotalPrice = mkrprice + pureprice
+    MKRTBTTCTotalBridgePrice = MKRBridgeReservePrice + TBTCBridgeReservePrice
+    MKRTBTTCTotalPrice = mkrprice + tbtcprice
+    MKREURCTotalBridgePrice = MKRBridgeReservePrice + EURCBridgeReservePrice
+    MKREURCTotalPrice = mkrprice + eurcprice
+    DAIVRSCTotalBridgePrice = DAIBridgeReservePrice + VRSCBridgeReservePrice
+    DAIVRSCTotalPrice = daiprice + vrscprice
+    DAIMKRTotalBridgePrice = DAIBridgeReservePrice + MKRBridgeReservePrice
+    DAIMKRTotalPrice = daiprice + mkrprice
+    DAIETHTotalBridgePrice = DAIBridgeReservePrice + ETHBridgeReservePrice
+    DAIETHTotalPrice = daiprice + ethprice
+    DAIPURETotalBridgePrice = DAIBridgeReservePrice + PUREBridgeReservePrice
+    DAIPURETotalPrice = daiprice + pureprice
+    DAITBTTCTotalBridgePrice = DAIBridgeReservePrice + TBTCBridgeReservePrice
+    DAITBTTCTotalPrice = daiprice + tbtcprice
+    DAIEURCTotalBridgePrice = DAIBridgeReservePrice + EURCBridgeReservePrice
+    DAIEURCTotalPrice = daiprice + eurcprice
+    VRSCDAITotalBridgePrice = VRSCBridgeReservePrice + DAIBridgeReservePrice
+    VRSCDAITotalPrice = vrscprice + daiprice
+    VRSCMKRTotalBridgePrice = VRSCBridgeReservePrice + MKRBridgeReservePrice
+    VRSCMKRTotalPrice = vrscprice + mkrprice
+    VRSCETHTotalBridgePrice = VRSCBridgeReservePrice + ETHBridgeReservePrice
+    VRSCETHTotalPrice = vrscprice + ethprice
+    VRSCPURETotalBridgePrice = VRSCBridgeReservePrice + PUREBridgeReservePrice
+    VRSCPURETotalPrice = vrscprice + pureprice
+    VRSCTBTTCTotalBridgePrice = VRSCBridgeReservePrice + TBTCBridgeReservePrice
+    VRSCTBTTCTotalPrice = vrscprice + tbtcprice
+    VRSCEURCTotalBridgePrice = VRSCBridgeReservePrice + EURCBridgeReservePrice
+    VRSCEURCTotalPrice = vrscprice + eurcprice
+    bridgevethbalances = calculate_total_balances("Bridge.vETH")
+    raceconditionbalances = calculate_total_balances("RaceCondition")
+    purebasketbalances = calculate_total_balances("Pure")
+    switchbasketbalances = calculate_total_balances("Switch")
     bidgevolume = load_from_json()
     VRSC = bidgevolume["VRSC"]
     vETH = bidgevolume["vETH"]
     MKRvETH = bidgevolume["MKR.vETH"]
     DAIvETH = bidgevolume["DAI.vETH"]
+    TBTCvETH = bidgevolume["TBTC.vETH"]
+    EURCvETH = bidgevolume["EURC.vETH"]
+    PUREvETH = bidgevolume["PURE"]
     response = [
         {
             "symbol": "VRSC-DAI",
@@ -841,7 +1226,7 @@ def routegetvrscdai():
             "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * daiprice} DAI",
             "TotalBridgePrice": f"{VRSCDAITotalBridgePrice * daiprice} DAI",
             "TotalPrice": f"{VRSCDAITotalPrice * daiprice} DAI",
-            "PairVolume": f"{VRSC + DAIvETH * daiprice} DAI"
+            "PairVolume": f"{VRSC + DAIvETH} DAI"
         },
         {
             "symbol": "VRSC-MKR",
@@ -867,6 +1252,39 @@ def routegetvrscdai():
             "PairVolume": f"{VRSC + vETH * ethprice} ETH"
         },
         {
+            "symbol": "VRSC-PURE",
+            "symbolName": "VRSC-PURE",
+            "PUREPrice": pureprice,
+            "VRSCPrice": vrscprice,
+            "PUREBridgeReservePrice": f"{PUREBridgeReservePrice * pureprice} PURE",
+            "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * pureprice} PURE",
+            "TotalBridgePrice": f"{VRSCPURETotalBridgePrice * pureprice} PURE",
+            "TotalPrice": f"{VRSCPURETotalPrice * pureprice} PURE",
+            "PairVolume": f"{VRSC + PUREvETH * pureprice} PURE"
+        },
+        {
+            "symbol": "VRSC-TBTC",
+            "symbolName": "VRSC-TBTC",
+            "TBTCPrice": tbtcprice,
+            "VRSCPrice": vrscprice,
+            "TBTCBridgeReservePrice": f"{TBTCBridgeReservePrice * tbtcprice} TBTC",
+            "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * tbtcprice} TBTC",
+            "TotalBridgePrice": f"{VRSCTBTTCTotalBridgePrice * tbtcprice} TBTC",
+            "TotalPrice": f"{VRSCTBTTCTotalPrice * tbtcprice} TBTC",
+            "PairVolume": f"{VRSC + TBTCvETH * tbtcprice} TBTC"
+        },
+        {
+            "symbol": "VRSC-EURC",
+            "symbolName": "VRSC-EURC",
+            "EURCPrice": eurcprice,
+            "VRSCPrice": vrscprice,
+            "EURCBridgeReservePrice": f"{EURCBridgeReservePrice * eurcprice} EURC",
+            "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * eurcprice} EURC",
+            "TotalBridgePrice": f"{VRSCEURCTotalBridgePrice * eurcprice} EURC",
+            "TotalPrice": f"{VRSCEURCTotalPrice * eurcprice} EURC",
+            "PairVolume": f"{VRSC + EURCvETH * eurcprice} EURC"
+        },
+        {
             "symbol": "ETH-DAI",
             "symbolName": "ETH-DAI",
             "DAIPrice": daiprice,
@@ -875,7 +1293,7 @@ def routegetvrscdai():
             "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * daiprice} DAI",
             "TotalBridgePrice": f"{ETHDAITotalBridgePrice * daiprice} DAI",
             "TotalPrice": f"{ETHDAITotalPrice * daiprice} DAI",
-            "PairVolume": f"{vETH + DAIvETH * daiprice} DAI"
+            "PairVolume": f"{vETH + DAIvETH} DAI"
         },
         {
             "symbol": "ETH-MKR",
@@ -898,6 +1316,39 @@ def routegetvrscdai():
             "TotalBridgePrice": f"{ETHVRSCTotalBridgePrice * vrscprice} VRSC",
             "TotalPrice": f"{ETHVRSCTotalPrice * vrscprice} VRSC",
             "PairVolume": f"{vETH + VRSC * vrscprice} VRSC"
+        },
+        {
+            "symbol": "ETH-PURE",
+            "symbolName": "ETH-PURE",
+            "PUREPrice": pureprice,
+            "ETHPrice": ethprice,
+            "PUREBridgeReservePrice": f"{PUREBridgeReservePrice * pureprice} PURE",
+            "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * pureprice} PURE",
+            "TotalBridgePrice": f"{ETHPURETotalBridgePrice * pureprice} PURE",
+            "TotalPrice": f"{ETHPURETotalPrice * pureprice} PURE",
+            "PairVolume": f"{vETH + PUREvETH * pureprice} PURE"
+        },
+        {
+            "symbol": "ETH-TBTC",
+            "symbolName": "ETH-TBTC",
+            "TBTCPrice": tbtcprice,
+            "ETHPrice": ethprice,
+            "TBTCBridgeReservePrice": f"{TBTCBridgeReservePrice * tbtcprice} TBTC",
+            "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * tbtcprice} TBTC",
+            "TotalBridgePrice": f"{ETHTBTTCTotalBridgePrice * tbtcprice} TBTC",
+            "TotalPrice": f"{ETHTBTTCTotalPrice * tbtcprice} TBTC",
+            "PairVolume": f"{vETH + TBTCvETH * tbtcprice} TBTC"
+        },
+        {
+            "symbol": "ETH-EURC",
+            "symbolName": "ETH-EURC",
+            "EURCPrice": eurcprice,
+            "ETHPrice": ethprice,
+            "EURCBridgeReservePrice": f"{EURCBridgeReservePrice * eurcprice} EURC",
+            "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * eurcprice} EURC",
+            "TotalBridgePrice": f"{ETHEURCTotalBridgePrice * eurcprice} EURC",
+            "TotalPrice": f"{ETHEURCTotalPrice * eurcprice} EURC",
+            "PairVolume": f"{vETH + EURCvETH * eurcprice} EURC"
         },
         {
             "symbol": "DAI-MKR",
@@ -934,6 +1385,39 @@ def routegetvrscdai():
             "PairVolume": f"{DAIvETH + VRSC * vrscprice} VRSC"
         },
         {
+            "symbol": "DAI-PURE",
+            "symbolName": "DAI-PURE",
+            "DAIPrice": daiprice,
+            "PUREPrice": pureprice,
+            "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * pureprice} PURE",
+            "PUREBridgeReservePrice": f"{PUREBridgeReservePrice * pureprice} PURE",
+            "TotalBridgePrice": f"{DAIPURETotalBridgePrice * pureprice} PURE",
+            "TotalPrice": f"{DAIPURETotalPrice * pureprice} PURE",
+            "PairVolume": f"{DAIvETH + PUREvETH * pureprice} PURE"
+        },
+        {
+            "symbol": "DAI-TBTC",
+            "symbolName": "DAI-TBTC",
+            "DAIPrice": daiprice,
+            "TBTCPrice": tbtcprice,
+            "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * tbtcprice} TBTC",
+            "TBTCBridgeReservePrice": f"{TBTCBridgeReservePrice * tbtcprice} TBTC",
+            "TotalBridgePrice": f"{DAITBTTCTotalBridgePrice * tbtcprice} TBTC",
+            "TotalPrice": f"{DAITBTTCTotalPrice * tbtcprice} TBTC",
+            "PairVolume": f"{DAIvETH + TBTCvETH * tbtcprice} TBTC"
+        },
+        {
+            "symbol": "DAI-EURC",
+            "symbolName": "DAI-EURC",
+            "DAIPrice": daiprice,
+            "EURCPrice": eurcprice,
+            "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * eurcprice} EURC",
+            "EURCBridgeReservePrice": f"{EURCBridgeReservePrice * eurcprice} EURC",
+            "TotalBridgePrice": f"{DAIEURCTotalBridgePrice * eurcprice} EURC",
+            "TotalPrice": f"{DAIEURCTotalPrice * eurcprice} EURC",
+            "PairVolume": f"{DAIvETH + EURCvETH * eurcprice} EURC"
+        },
+        {
             "symbol": "MKR-ETH",
             "symbolName": "MKR-ETH",
             "MKRPrice": mkrprice,
@@ -966,7 +1450,44 @@ def routegetvrscdai():
             "TotalPrice": f"{MKRDAITotalPrice * mkrprice} MKR",
             "PairVolume": f"{MKRvETH + DAIvETH * mkrprice} MKR"
         },
-    {"Totsl Bridge Balances": bridgebalances},
+        {
+            "symbol": "MKR-PURE",
+            "symbolName": "MKR-PURE",
+            "PUREPrice": pureprice,
+            "MKRPrice": mkrprice,
+            "PUREBridgeReservePrice": f"{PUREBridgeReservePrice * mkrprice} MKR",
+            "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
+            "TotalBridgePrice": f"{MKRPURETotalBridgePrice * mkrprice} MKR",
+            "TotalPrice": f"{MKRPURETotalPrice * mkrprice} MKR",
+            "PairVolume": f"{MKRvETH + PUREvETH * mkrprice} MKR"
+        },
+        {
+            "symbol": "MKR-TBTC",
+            "symbolName": "MKR-TBTC",
+            "TBTCPrice": tbtcprice,
+            "MKRPrice": mkrprice,
+            "TBTCBridgeReservePrice": f"{TBTCBridgeReservePrice * mkrprice} MKR",
+            "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
+            "TotalBridgePrice": f"{MKRTBTTCTotalBridgePrice * mkrprice} MKR",
+            "TotalPrice": f"{MKRTBTTCTotalPrice * mkrprice} MKR",
+            "PairVolume": f"{MKRvETH + TBTCvETH * mkrprice} MKR"
+        },
+        {
+            "symbol": "MKR-EURC",
+            "symbolName": "MKR-EURC",
+            "EURCPrice": eurcprice,
+            "MKRPrice": mkrprice,
+            "EURCBridgeReservePrice": f"{EURCBridgeReservePrice * mkrprice} MKR",
+            "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
+            "TotalBridgePrice": f"{MKREURCTotalBridgePrice * mkrprice} MKR",
+            "TotalPrice": f"{MKREURCTotalPrice * mkrprice} MKR",
+            "PairVolume": f"{MKRvETH + EURCvETH * mkrprice} MKR"
+        },
+    {"Total Bridge Balances": [
+        {"Bridge.vETH": bridgevethbalances},
+        {"PureBasket": purebasketbalances},
+        {"SwitchBasket": switchbasketbalances}
+    ]},
     {"24hr Currency Volume": bidgevolume},
     ]
     return jsonify(response, "success: True")
