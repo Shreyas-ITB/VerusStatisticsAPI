@@ -1266,11 +1266,11 @@ def routegetvrscdai():
             "symbolName": "VRSC-USDC",
             "usdcPrice": usdcprice,
             "VRSCPrice": vrscprice,
-            "usdcBridgeReservePrice": f"{usdcBridgeReservePrice * usdcprice} usdc",
-            "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * usdcprice} usdc",
-            "TotalBridgePrice": f"{VRSCTBTTCTotalBridgePrice * usdcprice} usdc",
-            "TotalPrice": f"{VRSCTBTTCTotalPrice * usdcprice} usdc",
-            "PairVolume": f"{VRSC + usdcvETH * usdcprice} usdc"
+            "usdcBridgeReservePrice": f"{usdcBridgeReservePrice * usdcprice} USDC",
+            "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * usdcprice} USDC",
+            "TotalBridgePrice": f"{VRSCTBTTCTotalBridgePrice * usdcprice} USDC",
+            "TotalPrice": f"{VRSCTBTTCTotalPrice * usdcprice} USDC",
+            "PairVolume": f"{VRSC + usdcvETH * usdcprice} USDC"
         },
         {
             "symbol": "VRSC-EURC",
@@ -1332,11 +1332,11 @@ def routegetvrscdai():
             "symbolName": "ETH-USDC",
             "usdcPrice": usdcprice,
             "ETHPrice": ethprice,
-            "usdcBridgeReservePrice": f"{usdcBridgeReservePrice * usdcprice} usdc",
-            "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * usdcprice} usdc",
-            "TotalBridgePrice": f"{ETHTBTTCTotalBridgePrice * usdcprice} usdc",
-            "TotalPrice": f"{ETHTBTTCTotalPrice * usdcprice} usdc",
-            "PairVolume": f"{vETH + usdcvETH * usdcprice} usdc"
+            "usdcBridgeReservePrice": f"{usdcBridgeReservePrice * usdcprice} USDC",
+            "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * usdcprice} USDC",
+            "TotalBridgePrice": f"{ETHTBTTCTotalBridgePrice * usdcprice} USDC",
+            "TotalPrice": f"{ETHTBTTCTotalPrice * usdcprice} USDC",
+            "PairVolume": f"{vETH + usdcvETH * usdcprice} USDC"
         },
         {
             "symbol": "ETH-EURC",
@@ -1399,11 +1399,11 @@ def routegetvrscdai():
             "symbolName": "DAI-USDC",
             "DAIPrice": daiprice,
             "usdcPrice": usdcprice,
-            "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * usdcprice} usdc",
-            "usdcBridgeReservePrice": f"{usdcBridgeReservePrice * usdcprice} usdc",
-            "TotalBridgePrice": f"{DAITBTTCTotalBridgePrice * usdcprice} usdc",
-            "TotalPrice": f"{DAITBTTCTotalPrice * usdcprice} usdc",
-            "PairVolume": f"{DAIvETH + usdcvETH * usdcprice} usdc"
+            "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * usdcprice} USDC",
+            "usdcBridgeReservePrice": f"{usdcBridgeReservePrice * usdcprice} USDC",
+            "TotalBridgePrice": f"{DAITBTTCTotalBridgePrice * usdcprice} USDC",
+            "TotalPrice": f"{DAITBTTCTotalPrice * usdcprice} USDC",
+            "PairVolume": f"{DAIvETH + usdcvETH * usdcprice} USDC"
         },
         {
             "symbol": "DAI-EURC",
@@ -1492,4 +1492,4 @@ def routegetvrscdai():
     return jsonify(response, "success: True")
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=PORT)
