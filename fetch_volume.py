@@ -192,9 +192,15 @@ def save_to_json(data):
 def add_to_json(new_data):
     with open('temp_data.json', 'r') as file:
         existing_data = json.load(file)
-    merged_data = {key: existing_data.get(key, 0) + new_data.get(key, 0) for key in set(existing_data) | set(new_data)}
+    
+    for key, value in new_data.items():
+        if key in existing_data:
+            existing_data[key] += value
+        else:
+            existing_data[key] = value
+    
     with open('temp_data.json', 'w') as file:
-        json.dump(merged_data, file)
+        json.dump(existing_data, file)
 
 def merge_json_data(data1, data2, data3):
     merged_data = {}
