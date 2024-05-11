@@ -230,7 +230,7 @@ def fetch_and_save_data():
         print(f"Latest block height is: {height}")
         print(f"Block height saved to memory {value[0]}")
         print("")
-        print(f"During the period of 30 mins, {numblocks} blocks have been found.")
+        print(f"During the period of 15 mins, {numblocks} blocks have been found.")
         print(f"Fetching stats for {numblocks} blocks")
         newreservevolume1 = aggregate_reserve_data_bridgeveth(str(height), numblocks)
         print("Sleeping for 60 secs.... Trying to not rate-limit the API")
