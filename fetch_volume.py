@@ -242,7 +242,14 @@ def fetch_and_save_data():
         add_to_json(newbridgereserves)
         print("Data saved to JSON file.")
 
+def run():
+    try:
+        # Start a separate thread to periodically fetch and save data
+        fetch_thread = threading.Thread(target=fetch_and_save_data)
+        fetch_thread.start()
+    except Exception as e:
+        print(f"An Error occurred: {e}, trying after 60 seconds...")
+        time.sleep(60)
+        run()
 
-# Start a separate thread to periodically fetch and save data
-fetch_thread = threading.Thread(target=fetch_and_save_data)
-fetch_thread.start()
+run()
