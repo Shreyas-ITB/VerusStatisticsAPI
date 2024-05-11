@@ -88,15 +88,11 @@ def aggregate_reserve_data_bridgeveth(height, rangevalue):
     prev_reserve_out = None
     print("Getting info for Bridge.vETH")
     for _ in range(rangevalue):
-        try:
-            response = getcurrencystate("Bridge.vETH", height)
-            for currency_id, data in bridgeveth_currencies_data.items():
-                currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
-                reserve_in = currency_info['reservein']
-                reserve_out = currency_info['reserveout']
-        except Exception as e:
-            print(f"Error: {e}, trying again after 5 mins...")
-            time.sleep(300)
+        response = getcurrencystate("Bridge.vETH", height)
+        for currency_id, data in bridgeveth_currencies_data.items():
+            currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
+            reserve_in = currency_info['reservein']
+            reserve_out = currency_info['reserveout']
             if reserve_in != prev_reserve_in or reserve_out != prev_reserve_out:
                 data['total_reserve'] += reserve_in + reserve_out
                 prev_reserve_in = reserve_in
@@ -124,15 +120,11 @@ def aggregate_reserve_data_switch(height, rangevalue):
     prev_reserve_out = None
     print("Getting info for Switch")
     for _ in range(rangevalue):
-        try:
-            response = getcurrencystate("Switch", height)
-            for currency_id, data in switchbasket_currencies_data.items():
-                currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
-                reserve_in = currency_info['reservein']
-                reserve_out = currency_info['reserveout']
-        except Exception as e:
-            print(f"Error: {e}, trying again after 5 mins...")
-            time.sleep(300)
+        response = getcurrencystate("Switch", height)
+        for currency_id, data in switchbasket_currencies_data.items():
+            currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
+            reserve_in = currency_info['reservein']
+            reserve_out = currency_info['reserveout']
             if reserve_in != prev_reserve_in or reserve_out != prev_reserve_out:
                 data['total_reserve'] += reserve_in + reserve_out
                 prev_reserve_in = reserve_in
@@ -159,15 +151,11 @@ def aggregate_reserve_data_pure(height, rangevalue):
     prev_reserve_out = None
     print("Getting info for Pure")
     for _ in range(rangevalue):
-        try:
-            response = getcurrencystate("Pure", height)
-            for currency_id, data in purebasket_currencies_data.items():
-                currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
-                reserve_in = currency_info['reservein']
-                reserve_out = currency_info['reserveout']
-        except Exception as e:
-            print(f"Error: {e}, trying again after 5 mins...")
-            time.sleep(300)
+        response = getcurrencystate("Pure", height)
+        for currency_id, data in purebasket_currencies_data.items():
+            currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
+            reserve_in = currency_info['reservein']
+            reserve_out = currency_info['reserveout']
             if reserve_in != prev_reserve_in or reserve_out != prev_reserve_out:
                 data['total_reserve'] += reserve_in + reserve_out
                 prev_reserve_in = reserve_in
@@ -220,15 +208,15 @@ def fetch_and_save_data():
     print(f"Block height saved to memory {value[0]}")
     print("")
     if height is not None:
-        reservevolume1 = aggregate_reserve_data_bridgeveth(str(value[0]), 1440)
+        reservevolume1 = aggregate_reserve_data_bridgeveth(str(value[0]), 14)
         print("Sleeping for 60 secs.... Trying to not rate-limit the API")
         time.sleep(60)
         print("")
-        reservevolume2 = aggregate_reserve_data_switch(str(value[0]), 1440)
+        reservevolume2 = aggregate_reserve_data_switch(str(value[0]), 14)
         print("Sleeping for 60 secs.... Trying to not rate-limit the API")
         time.sleep(60)
         print("")
-        reservevolume3 = aggregate_reserve_data_pure(str(value[0]), 1440)
+        reservevolume3 = aggregate_reserve_data_pure(str(value[0]), 14)
         bridgereserves = merge_json_data(reservevolume1, reservevolume2, reservevolume3)
         save_to_json(bridgereserves)
         print("Data saved to JSON file.")
@@ -266,5 +254,4 @@ def run():
         print(f"An Error occurred: {e}, trying after 60 seconds...")
         time.sleep(60)
         run()
-
 run()
