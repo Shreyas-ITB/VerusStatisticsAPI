@@ -19,10 +19,10 @@ def get_block_count():
 
 def getcurrencystate(currency, height):
     payload = {
-        'id': 1,
-        'jsonrpc': '2.0',
-        'method': 'getcurrencystate',
-        'params': [currency, height]
+    'id': 1,
+    'jsonrpc': '2.0',
+    'method': 'getcurrencystate',
+    'params': [currency, height]
     }
     response = requests.post(RPCURL, json=payload, timeout=10000).json()
     return response
@@ -88,12 +88,15 @@ def aggregate_reserve_data_bridgeveth(height, rangevalue):
     prev_reserve_out = None
     print("Getting info for Bridge.vETH")
     for _ in range(rangevalue):
-        response = getcurrencystate("Bridge.vETH", height)
-        for currency_id, data in bridgeveth_currencies_data.items():
-            currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
-            reserve_in = currency_info['reservein']
-            reserve_out = currency_info['reserveout']
-            
+        try:
+            response = getcurrencystate("Bridge.vETH", height)
+            for currency_id, data in bridgeveth_currencies_data.items():
+                currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
+                reserve_in = currency_info['reservein']
+                reserve_out = currency_info['reserveout']
+        except Exception as e:
+            print(f"Error: {e}, trying again after 5 mins...")
+            time.sleep(300)
             if reserve_in != prev_reserve_in or reserve_out != prev_reserve_out:
                 data['total_reserve'] += reserve_in + reserve_out
                 prev_reserve_in = reserve_in
@@ -121,12 +124,15 @@ def aggregate_reserve_data_switch(height, rangevalue):
     prev_reserve_out = None
     print("Getting info for Switch")
     for _ in range(rangevalue):
-        response = getcurrencystate("Switch", height)
-        for currency_id, data in switchbasket_currencies_data.items():
-            currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
-            reserve_in = currency_info['reservein']
-            reserve_out = currency_info['reserveout']
-            
+        try:
+            response = getcurrencystate("Switch", height)
+            for currency_id, data in switchbasket_currencies_data.items():
+                currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
+                reserve_in = currency_info['reservein']
+                reserve_out = currency_info['reserveout']
+        except Exception as e:
+            print(f"Error: {e}, trying again after 5 mins...")
+            time.sleep(300)
             if reserve_in != prev_reserve_in or reserve_out != prev_reserve_out:
                 data['total_reserve'] += reserve_in + reserve_out
                 prev_reserve_in = reserve_in
@@ -153,12 +159,15 @@ def aggregate_reserve_data_pure(height, rangevalue):
     prev_reserve_out = None
     print("Getting info for Pure")
     for _ in range(rangevalue):
-        response = getcurrencystate("Pure", height)
-        for currency_id, data in purebasket_currencies_data.items():
-            currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
-            reserve_in = currency_info['reservein']
-            reserve_out = currency_info['reserveout']
-            
+        try:
+            response = getcurrencystate("Pure", height)
+            for currency_id, data in purebasket_currencies_data.items():
+                currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
+                reserve_in = currency_info['reservein']
+                reserve_out = currency_info['reserveout']
+        except Exception as e:
+            print(f"Error: {e}, trying again after 5 mins...")
+            time.sleep(300)
             if reserve_in != prev_reserve_in or reserve_out != prev_reserve_out:
                 data['total_reserve'] += reserve_in + reserve_out
                 prev_reserve_in = reserve_in
