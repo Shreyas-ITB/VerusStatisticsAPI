@@ -172,6 +172,23 @@ def get_imports(currency: str):
         return response.json()
     else:
         return {"error": "Failed to retrieve data"}
+    
+def get_imports_with_blocks(currency: str, fromblk: int, toblk: int):
+    url = RPCURL
+
+    json_data = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getimports",
+        "params": [currency, fromblk, toblk]
+    }
+
+    response = requests.post(url, json=json_data)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": "Failed to retrieve data"}
 
 def get_rawtransaction(txid):
     requestData = {
@@ -1093,6 +1110,14 @@ def routegetimports(currency: str):
     response = get_imports(newcurrency)
     return jsonify(response)
 
+@app.route('/getimports_blk/<currency>/<fromblk>/<toblk>/', methods=['GET'])
+def routegetimports_blk(currency: str, fromblk: int, toblk: int):
+    newfromblk = int(fromblk)
+    newtoblk = int(toblk)
+    newcurrency = str(currency)
+    response = get_imports_with_blocks(newcurrency, newfromblk, newtoblk)
+    return jsonify(response)
+
 @app.route('/getvolume/<currencyid>/<currency>/<fromblk>/<toblk>')
 def routegetvolume(currencyid: str, currency: str, fromblk: int, toblk: int):
     newfromblk = int(fromblk)
@@ -1492,4 +1517,4 @@ def routegetvrscdai():
     return jsonify(response, "success: True")
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=PORT)
+    app.run(debug=True)
