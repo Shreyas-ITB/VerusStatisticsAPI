@@ -24,7 +24,7 @@ def getcurrencystate(currency, height):
         'method': 'getcurrencystate',
         'params': [currency, height]
     }
-    response = requests.post(RPCURL, json=payload, timeout=100).json()
+    response = requests.post(RPCURL, json=payload, timeout=10000).json()
     return response
 
 arr_currencies = [
@@ -101,7 +101,7 @@ def aggregate_reserve_data_bridgeveth(height, rangevalue):
 
         height = str(int(height) - 1)
         print(f"Fetching stats for block {height}")
-        time.sleep(0.1)
+        time.sleep(0.2)
     
     # Fetch currency names and structure the result
     result = {}
@@ -134,7 +134,7 @@ def aggregate_reserve_data_switch(height, rangevalue):
             
         height = str(int(height) - 1)
         print(f"Fetching stats for block {height}")
-        time.sleep(0.1)
+        time.sleep(0.2)
     
     # Fetch currency names and structure the result
     result = {}
@@ -166,7 +166,7 @@ def aggregate_reserve_data_pure(height, rangevalue):
             
         height = str(int(height) - 1)
         print(f"Fetching stats for block {height}")
-        time.sleep(0.1)
+        time.sleep(0.2)
     
     # Fetch currency names and structure the result
     result = {}
@@ -206,11 +206,11 @@ def fetch_and_save_data():
     print("")
     if height is not None:
         reservevolume1 = aggregate_reserve_data_bridgeveth(str(value[0]), 1440)
-        print("Sleeping for 60 mins.... Trying to not rate-limit the API")
+        print("Sleeping for 60 secs.... Trying to not rate-limit the API")
         time.sleep(60)
         print("")
         reservevolume2 = aggregate_reserve_data_switch(str(value[0]), 1440)
-        print("Sleeping for 60 mins.... Trying to not rate-limit the API")
+        print("Sleeping for 60 secs.... Trying to not rate-limit the API")
         time.sleep(60)
         print("")
         reservevolume3 = aggregate_reserve_data_pure(str(value[0]), 1440)
@@ -218,7 +218,7 @@ def fetch_and_save_data():
         save_to_json(bridgereserves)
         print("Data saved to JSON file.")
     while True:
-        print(f"Sleeping for 30 mins...")
+        print(f"Sleeping for 15 mins...")
         time.sleep(900)  # Sleep for 15 mins
         print("")
         currentheight = get_block_count()
