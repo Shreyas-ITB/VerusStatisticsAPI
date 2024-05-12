@@ -190,6 +190,21 @@ def get_imports_with_blocks(currency: str, fromblk: int, toblk: int):
     else:
         return {"error": "Failed to retrieve data"}
 
+def get_address_balance(address):
+    json_data = {
+        "jsonrpc": "1.0",
+        "id": "curltest",
+        "method": "getaddressbalance",
+        "params": [{"addresses": [address]}]
+    }
+
+    response = requests.post(RPCURL, json=json_data)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": "Failed to retrieve data"}
+
 def get_rawtransaction(txid):
     requestData = {
         "method": "post",
@@ -1141,6 +1156,12 @@ def routegettxns(currency: str, fromblk: int, toblk: int):
     newtoblk = int(toblk)
     newcurrency = str(currency)
     response = extract_transfers(newcurrency, newfromblk, newtoblk)
+    return jsonify(response)
+
+@app.route('/getaddressbalance/<address>', methods=['GET'])
+def routegetaddressbalance(address: str):
+    newaddress = str(address)
+    response = get_address_balance(newaddress)
     return jsonify(response)
 
 @app.route('/market/allTickers/', methods=['GET'])
