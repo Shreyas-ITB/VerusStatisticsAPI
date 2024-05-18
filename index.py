@@ -438,6 +438,8 @@ def diff_format(num):
 
 def get_currencyconverters_pure():
     networkblocks = latest_block()
+    reserves = dai_reserves()
+    resp = get_reserve_dai_price(reserves)
     requestData = {
         "method": "post",
         "url": "https://rpc.vrsc.komodefi.com/",
@@ -494,14 +496,16 @@ def get_currencyconverters_pure():
         "startblock": total_startblock,
         "block": networkblocks,
         "blk_volume": volume,
-        "vrsc_reserves": reserves[0],
-        "vrsc_price_in_reserves": priceinreserve[0], 
-        "tbtc_reserves": reserves[1],
-        "tbtc_price_in_reserves": priceinreserve[1],
+        "vrsc_reserves": f"{reserves[0] * resp} USD",
+        "vrsc_price_in_reserves": f"{priceinreserve[0]} USD", 
+        "tbtc_reserves": f"{reserves[1] * resp} USD",
+        "tbtc_price_in_reserves": f"{priceinreserve[1]} USD",
     }
 
 def get_currencyconverters_bridgeveth():
     networkblocks = latest_block()
+    reserves = dai_reserves()
+    resp = get_reserve_dai_price(reserves)
     requestData = {
         "method": "post",
         "url": "https://rpc.vrsc.komodefi.com/",
@@ -558,18 +562,20 @@ def get_currencyconverters_bridgeveth():
         "startblock": total_startblock,
         "block": networkblocks,
         "blk_volume": volume,
-        "vrsc_reserves": reserves[0],
-        "vrsc_price_in_reserves": priceinreserve[0], 
-        "dai_reserves": reserves[1],
-        "dai_price_in_reserves": priceinreserve[1],
-        "mkr_reserves": reserves[2],
-        "mkr_price_in_reserves": priceinreserve[2],
-        "eth_reserves": reserves[3],
-        "eth_price_in_reserves": priceinreserve[3],
+        "vrsc_reserves": f"{reserves[0] * resp} USD",
+        "vrsc_price_in_reserves": f"{priceinreserve[0] * resp} USD", 
+        "dai_reserves": f"{reserves[1] * resp} USD",
+        "dai_price_in_reserves": f"{priceinreserve[1] * resp} USD",
+        "mkr_reserves": f"{reserves[2] * resp} USD",
+        "mkr_price_in_reserves": f"{priceinreserve[2] * resp} USD",
+        "eth_reserves": f"{reserves[3] * resp} USD",
+        "eth_price_in_reserves": f"{priceinreserve[3] * resp} USD",
     }
 
 def get_currencyconverters_switch():
     networkblocks = latest_block()
+    reserves = dai_reserves()
+    resp = get_reserve_dai_price(reserves)
     requestData = {
         "method": "post",
         "url": "https://rpc.vrsc.komodefi.com/",
@@ -626,18 +632,20 @@ def get_currencyconverters_switch():
         "startblock": total_startblock,
         "block": networkblocks,
         "blk_volume": volume,
-        "vrsc_reserves": reserves[0],
-        "vrsc_price_in_reserves": priceinreserve[0], 
-        "dai_reserves": reserves[1],
-        "dai_price_in_reserves": priceinreserve[1],
-        "usdc_reserves": reserves[2],
-        "usdc_price_in_reserves": priceinreserve[2],
-        "eurc_reserves": reserves[3],
-        "eurc_price_in_reserves": priceinreserve[3],
+        "vrsc_reserves": f"{reserves[0] * resp} USD",
+        "vrsc_price_in_reserves": f"{priceinreserve[0] * resp} USD", 
+        "dai_reserves": f"{reserves[1] * resp} USD",
+        "dai_price_in_reserves": f"{priceinreserve[1] * resp} USD",
+        "usdc_reserves": f"{reserves[2] * resp} USD",
+        "usdc_price_in_reserves": f"{priceinreserve[2] * resp} USD",
+        "eurc_reserves": f"{reserves[3] * resp} USD",
+        "eurc_price_in_reserves": f"{priceinreserve[3] * resp} USD",
     }
 
 def get_currencyconverters_kaiju():
     networkblocks = latest_block()
+    reserves = dai_reserves()
+    resp = get_reserve_dai_price(reserves)
     requestData = {
         "method": "post",
         "url": "https://rpc.vrsc.komodefi.com/",
@@ -694,14 +702,14 @@ def get_currencyconverters_kaiju():
         "startblock": total_startblock,
         "block": networkblocks,
         "blk_volume": volume,
-        "vrsc_reserves": reserves[0],
-        "vrsc_price_in_reserves": priceinreserve[0], 
-        "usdt_reserves": reserves[1],
-        "usdt_price_in_reserves": priceinreserve[1],
-        "eth_reserves": reserves[2],
-        "eth_price_in_reserves": priceinreserve[2],
-        "tbtc_reserves": reserves[3],
-        "tbtc_price_in_reserves": priceinreserve[3],
+        "vrsc_reserves": f"{reserves[0] * resp} USD",
+        "vrsc_price_in_reserves": f"{priceinreserve[0] * resp} USD", 
+        "usdt_reserves": f"{reserves[1] * resp} USD",
+        "usdt_price_in_reserves": f"{priceinreserve[1] * resp} USD",
+        "eth_reserves": f"{reserves[2] * resp} USD",
+        "eth_price_in_reserves": f"{priceinreserve[2] * resp} USD",
+        "tbtc_reserves": f"{reserves[3] * resp} USD",
+        "tbtc_price_in_reserves": f"{priceinreserve[3] * resp} USD",
     }
 
 def formatHashrate(hashrate):
