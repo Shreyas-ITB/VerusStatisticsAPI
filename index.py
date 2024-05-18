@@ -23,14 +23,15 @@ arr_currencies = [
     {"currencyid": "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM", "ticker": "DAI.vETH"},
     {"currencyid": "iCkKJuJScy4Z6NSDK7Mt42ZAB2NEnAE1o4", "ticker": "MKR.vETH"},
     {"currencyid": "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X", "ticker": "vETH"},
-    {"currencyid": "iJczmut8fHgRvVxaNfEPm7SkgJLDFtPcrK", "ticker": "LINK.vETH"},
     {"currencyid": "iC5TQFrFXSYLQGkiZ8FYmZHFJzaRF5CYgE", "ticker": "EURC.vETH"},
-    {"currencyid": "iS3NjE3XRYWoHRoovpLhFnbDraCq7NFStf", "ticker": "WBTC.vETH"},
     {"currencyid": "i9oCSqKALwJtcv49xUKS2U2i79h1kX6NEY", "ticker": "USDT.vETH"},
-    {"currencyid": "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU", "ticker": "PURE.vETH"},
     {"currencyid": "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd", "ticker": "USDC.vETH"},
-    {"currencyid": "iEnQEjjozf1HZkqFT9U4NKnzz1iGZ7LbJ4", "ticker": "TRAC.vETH"},
-    {"currencyid": "iNtUUdjsqV34snGZJerAvPLaojo6tV9sfd", "ticker": "MARS4.vETH"}
+    {"currencyid": "iHax5qYQGbcMGqJKKrPorpzUBX2oFFXGnY", "ticker": "PURE.vETH"},
+    {"currencyid": "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU", "ticker": "tBTC.vETH"},
+    {"currencyid": "iExBJfZYK7KREDpuhj6PzZBzqMAKaFg7d2", "ticker": "vARRR" },
+    {"currencyid": "i3f7tSctFkiPpiedY8QR5Tep9p4qDVebDx", "ticker": "Bridge.vETH" },
+    {"currencyid": "i4Xr5TAMrDTD99H69EemhjDxJ4ktNskUtc", "ticker": "Switch" },
+    {"currencyid": "i9kVWKU2VwARALpbXn4RS9zvrhvNRaUibb", "ticker": "Kaiju"}
 ]
 
 def send_request(method, url, headers, data):
@@ -94,6 +95,20 @@ def get_bridge_currency_switch():
     response = send_request(**requestData)
     return response["result"]["bestcurrencystate"]["reservecurrencies"]
 
+def get_bridge_currency_kaiju():
+    requestData = {
+        "method": "post",
+        "url": RPCURL,
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrency",
+            "params": ["Kaiju"],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+    return response["result"]["bestcurrencystate"]["reservecurrencies"]
+
 def dai_reserves():
     reservecurrencies = get_bridge_currency_bridgeveth()
     dai = next((item for item in reservecurrencies if item["currencyid"] == "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM"), None)
@@ -124,7 +139,7 @@ def eth_reserves():
 
 def pure_reserves():
     reservecurrencies = get_bridge_currency_pure()
-    pure = next((item for item in reservecurrencies if item["currencyid"] == "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU"), None)
+    pure = next((item for item in reservecurrencies if item["currencyid"] == "iHax5qYQGbcMGqJKKrPorpzUBX2oFFXGnY"), None)
     if pure:
         return pure["reserves"]
     return None
@@ -171,7 +186,11 @@ def get_imports(currency: str):
         return response.json()
     else:
         return {"error": "Failed to retrieve data"}
-    
+
+def getvarrrblocks():
+    req = requests.get("https://varrrexplorer.piratechain.com/api/getblockcount")
+    return req.text
+
 def get_imports_with_blocks(currency: str, fromblk: int, toblk: int):
     url = RPCURL
 
@@ -396,6 +415,274 @@ def diff_format(num):
         num /= 1000.0
     return '{}{}'.format('{:f}'.format(num).rstrip('0').rstrip('.'), ['', ' Thousand', ' Million', ' Billion', ' Trillion'][magnitude])
 
+def get_currencyconverters_pure():
+    networkblocks = latest_block()
+    requestData = {
+        "method": "post",
+        "url": "https://rpc.vrsc.komodefi.com/",
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrencyconverters",
+            "params": ["Pure"],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+
+    # Assuming the JSON data is in response['result']
+    data = response.get('result')
+
+    # Initialize variables to hold the sums
+    total_initialsupply = 0
+    total_startblock = 0
+    total_reservein = 0
+    total_reserveout = 0
+    reserves = []
+    priceinreserve = []
+
+    # Accessing specific elements and summing them
+    for item in data:
+        currency_info = item.get('iHax5qYQGbcMGqJKKrPorpzUBX2oFFXGnY')
+        last_notarization = item.get('lastnotarization')
+
+        if currency_info:
+            total_initialsupply += currency_info.get('initialsupply', 0)
+            total_startblock += currency_info.get('startblock', 0)
+
+        if last_notarization:
+            currencystate = last_notarization.get('currencystate', {})
+            currencies = currencystate.get('currencies', {})
+
+            for key, value in currencies.items():
+                total_reservein += value.get('reservein', 0)
+                total_reserveout += value.get('reserveout', 0)
+
+            reservecurrencies = currencystate.get('reservecurrencies', [])
+            for rc in reservecurrencies:
+                reserves.append(rc.get('reserves', 0))
+                priceinreserve.append(rc.get('priceinreserve', 0))
+
+    # Calculate the total volume
+    volume = total_reservein + total_reserveout
+
+    # Return the extracted values along with the volume
+    return {
+        "bridge": "Pure",
+        "initialsupply": total_initialsupply,
+        "supply": float("74441.97612458"),
+        "startblock": total_startblock,
+        "block": networkblocks,
+        "blk_volume": volume,
+        "vrsc_reserves": reserves[0],
+        "vrsc_price_in_reserves": priceinreserve[0], 
+        "tbtc_reserves": reserves[1],
+        "tbtc_price_in_reserves": priceinreserve[1],
+    }
+
+def get_currencyconverters_bridgeveth():
+    networkblocks = latest_block()
+    requestData = {
+        "method": "post",
+        "url": "https://rpc.vrsc.komodefi.com/",
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrencyconverters",
+            "params": ["Bridge.veth"],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+
+    # Assuming the JSON data is in response['result']
+    data = response.get('result')
+
+    # Initialize variables to hold the sums
+    total_initialsupply = 0
+    total_startblock = 0
+    total_reservein = 0
+    total_reserveout = 0
+    reserves = []
+    priceinreserve = []
+
+    # Accessing specific elements and summing them
+    for item in data:
+        currency_info = item.get('i3f7tSctFkiPpiedY8QR5Tep9p4qDVebDx')
+        last_notarization = item.get('lastnotarization')
+
+        if currency_info:
+            total_initialsupply += currency_info.get('initialsupply', 0)
+            total_startblock += currency_info.get('startblock', 0)
+
+        if last_notarization:
+            currencystate = last_notarization.get('currencystate', {})
+            currencies = currencystate.get('currencies', {})
+
+            for key, value in currencies.items():
+                total_reservein += value.get('reservein', 0)
+                total_reserveout += value.get('reserveout', 0)
+
+            reservecurrencies = currencystate.get('reservecurrencies', [])
+            for rc in reservecurrencies:
+                reserves.append(rc.get('reserves', 0))
+                priceinreserve.append(rc.get('priceinreserve', 0))
+
+    # Calculate the total volume
+    volume = total_reservein + total_reserveout
+
+    # Return the extracted values along with the volume
+    return {
+        "bridge": "Bridge.veth",
+        "initialsupply": total_initialsupply,
+        "supply": float("1193956.17576754"),
+        "startblock": total_startblock,
+        "block": networkblocks,
+        "blk_volume": volume,
+        "vrsc_reserves": reserves[0],
+        "vrsc_price_in_reserves": priceinreserve[0], 
+        "dai_reserves": reserves[1],
+        "dai_price_in_reserves": priceinreserve[1],
+        "mkr_reserves": reserves[2],
+        "mkr_price_in_reserves": priceinreserve[2],
+        "eth_reserves": reserves[3],
+        "eth_price_in_reserves": priceinreserve[3],
+    }
+
+def get_currencyconverters_switch():
+    networkblocks = latest_block()
+    requestData = {
+        "method": "post",
+        "url": "https://rpc.vrsc.komodefi.com/",
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrencyconverters",
+            "params": ["Switch"],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+
+    # Assuming the JSON data is in response['result']
+    data = response.get('result')
+
+    # Initialize variables to hold the sums
+    total_initialsupply = 0
+    total_startblock = 0
+    total_reservein = 0
+    total_reserveout = 0
+    reserves = []
+    priceinreserve = []
+
+    # Accessing specific elements and summing them
+    for item in data:
+        currency_info = item.get('i4Xr5TAMrDTD99H69EemhjDxJ4ktNskUtc')
+        last_notarization = item.get('lastnotarization')
+
+        if currency_info:
+            total_initialsupply += currency_info.get('initialsupply', 0)
+            total_startblock += currency_info.get('startblock', 0)
+
+        if last_notarization:
+            currencystate = last_notarization.get('currencystate', {})
+            currencies = currencystate.get('currencies', {})
+
+            for key, value in currencies.items():
+                total_reservein += value.get('reservein', 0)
+                total_reserveout += value.get('reserveout', 0)
+
+            reservecurrencies = currencystate.get('reservecurrencies', [])
+            for rc in reservecurrencies:
+                reserves.append(rc.get('reserves', 0))
+                priceinreserve.append(rc.get('priceinreserve', 0))
+
+    # Calculate the total volume
+    volume = total_reservein + total_reserveout
+
+    # Return the extracted values along with the volume
+    return {
+        "bridge": "Switch",
+        "initialsupply": total_initialsupply,
+        "supply": float("13837.92424038"),
+        "startblock": total_startblock,
+        "block": networkblocks,
+        "blk_volume": volume,
+        "vrsc_reserves": reserves[0],
+        "vrsc_price_in_reserves": priceinreserve[0], 
+        "dai_reserves": reserves[1],
+        "dai_price_in_reserves": priceinreserve[1],
+        "usdc_reserves": reserves[2],
+        "usdc_price_in_reserves": priceinreserve[2],
+        "eurc_reserves": reserves[3],
+        "eurc_price_in_reserves": priceinreserve[3],
+    }
+
+def get_currencyconverters_kaiju():
+    networkblocks = latest_block()
+    requestData = {
+        "method": "post",
+        "url": "https://rpc.vrsc.komodefi.com/",
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrencyconverters",
+            "params": ["Kaiju"],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+
+    # Assuming the JSON data is in response['result']
+    data = response.get('result')
+
+    # Initialize variables to hold the sums
+    total_initialsupply = 0
+    total_startblock = 0
+    total_reservein = 0
+    total_reserveout = 0
+    reserves = []
+    priceinreserve = []
+
+    # Accessing specific elements and summing them
+    for item in data:
+        currency_info = item.get('i9kVWKU2VwARALpbXn4RS9zvrhvNRaUibb')
+        last_notarization = item.get('lastnotarization')
+
+        if currency_info:
+            total_initialsupply += currency_info.get('initialsupply', 0)
+            total_startblock += currency_info.get('startblock', 0)
+
+        if last_notarization:
+            currencystate = last_notarization.get('currencystate', {})
+            currencies = currencystate.get('currencies', {})
+
+            for key, value in currencies.items():
+                total_reservein += value.get('reservein', 0)
+                total_reserveout += value.get('reserveout', 0)
+
+            reservecurrencies = currencystate.get('reservecurrencies', [])
+            for rc in reservecurrencies:
+                reserves.append(rc.get('reserves', 0))
+                priceinreserve.append(rc.get('priceinreserve', 0))
+
+    # Calculate the total volume
+    volume = total_reservein + total_reserveout
+
+    # Return the extracted values along with the volume
+    return {
+        "bridge": "Kaiju",
+        "initialsupply": total_initialsupply,
+        "supply": float("97086.59369916"),
+        "startblock": total_startblock,
+        "block": networkblocks,
+        "blk_volume": volume,
+        "vrsc_reserves": reserves[0],
+        "vrsc_price_in_reserves": priceinreserve[0], 
+        "usdt_reserves": reserves[1],
+        "usdt_price_in_reserves": priceinreserve[1],
+        "eth_reserves": reserves[2],
+        "eth_price_in_reserves": priceinreserve[2],
+        "tbtc_reserves": reserves[3],
+        "tbtc_price_in_reserves": priceinreserve[3],
+    }
+
 def formatHashrate(hashrate):
     if hashrate < 1000:
         return f"{round(hashrate, 2)}H/s"
@@ -615,6 +902,14 @@ def getcurrenciesracecondition():
 def getcurrenciesswitch():
     try:
         reservecurrencies = get_bridge_currency_switch()
+        return reservecurrencies
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get('/getcurrencies/Kaiju')
+def getcurrenciesswitch():
+    try:
+        reservecurrencies = get_bridge_currency_kaiju()
         return reservecurrencies
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -858,7 +1153,7 @@ def getbridgeethreserveprice():
 @app.get('/getbridgepureprice')
 def getbridgepurereserveprice():
     reservecurrencies = get_bridge_currency_pure()
-    dai = next((item for item in reservecurrencies if item["currencyid"] == "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU"), None)
+    dai = next((item for item in reservecurrencies if item["currencyid"] == "iHax5qYQGbcMGqJKKrPorpzUBX2oFFXGnY"), None)
     if dai:
         return dai["priceinreserve"], "success: True"
     return None
@@ -1220,6 +1515,29 @@ def routegetaddressbalance(address: str):
     response = get_address_balance(newaddress)
     return response
 
+@app.get('/getbasketinfo/')
+def routegetbasketsupply():
+    try:
+        bridgevethbasket = get_currencyconverters_bridgeveth()
+        purebasket = get_currencyconverters_pure()
+        switchbasket = get_currencyconverters_switch()
+        kaijubasket = get_currencyconverters_kaiju()
+        varrr_blkheight = getvarrrblocks()
+        data = [
+            bridgevethbasket,
+            purebasket,
+            switchbasket,
+            kaijubasket,
+            {
+                "basket": "bridge.varrr",
+                "height": int(varrr_blkheight),
+                "supply": 74853.99232919
+            }
+        ]
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get('/market/allTickers/')
 def routegetvrscdai():
     try:
@@ -1251,7 +1569,7 @@ def routegetvrscdai():
         MKRBridgeReservePrice = mkr['priceinreserve']
         eth = next((item for item in bridgevethreservecurrencies if item["currencyid"] == "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X"), None)
         ETHBridgeReservePrice = eth['priceinreserve']
-        pure = next((item for item in purebasketreservecurrencies if item["currencyid"] == "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU"), None)
+        pure = next((item for item in purebasketreservecurrencies if item["currencyid"] == "iHax5qYQGbcMGqJKKrPorpzUBX2oFFXGnY"), None)
         PUREBridgeReservePrice = pure['priceinreserve']
         usdc = next((item for item in switchbasketreservecurrencies if item["currencyid"] == "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd"), None)
         usdcBridgeReservePrice = usdc['priceinreserve']
@@ -1310,14 +1628,14 @@ def routegetvrscdai():
         raceconditionbalances = calculate_total_balances("RaceCondition")
         purebasketbalances = calculate_total_balances("Pure")
         switchbasketbalances = calculate_total_balances("Switch")
-        bidgevolume = load_from_json()
-        VRSC = bidgevolume["VRSC"]
-        vETH = bidgevolume["vETH"]
-        MKRvETH = bidgevolume["MKR.vETH"]
-        DAIvETH = bidgevolume["DAI.vETH"]
-        usdcvETH = bidgevolume["USDC.vETH"]
-        EURCvETH = bidgevolume["EURC.vETH"]
-        PUREvETH = bidgevolume["PURE.vETH"]
+        bridgevolume = load_from_json()
+        VRSC = bridgevolume["VRSC"]
+        vETH = bridgevolume["vETH"]
+        MKRvETH = bridgevolume["MKR.vETH"]
+        DAIvETH = bridgevolume["DAI.vETH"]
+        usdcvETH = bridgevolume["USDC.vETH"]
+        EURCvETH = bridgevolume["EURC.vETH"]
+        PUREvETH = bridgevolume["PURE.vETH"]
         response = [
             {
                 "symbol": "VRSC-DAI",
@@ -1590,11 +1908,11 @@ def routegetvrscdai():
             {"PureBasket": purebasketbalances},
             {"SwitchBasket": switchbasketbalances}
         ]},
-        {"24hr Currency Volume": bidgevolume},
+        {"24hr Currency Volume": bridgevolume},
         ]
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    uvicorn.run(app, port=int(PORT))
+    uvicorn.run(app, host="0.0.0.0", port=int(PORT))
