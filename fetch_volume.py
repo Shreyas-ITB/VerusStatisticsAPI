@@ -32,14 +32,14 @@ arr_currencies = [
     {"currencyid": "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM", "ticker": "DAI.vETH"},
     {"currencyid": "iCkKJuJScy4Z6NSDK7Mt42ZAB2NEnAE1o4", "ticker": "MKR.vETH"},
     {"currencyid": "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X", "ticker": "vETH"},
+    {"currencyid": "iJczmut8fHgRvVxaNfEPm7SkgJLDFtPcrK", "ticker": "LINK.vETH"},
     {"currencyid": "iC5TQFrFXSYLQGkiZ8FYmZHFJzaRF5CYgE", "ticker": "EURC.vETH"},
+    {"currencyid": "iS3NjE3XRYWoHRoovpLhFnbDraCq7NFStf", "ticker": "WBTC.vETH"},
     {"currencyid": "i9oCSqKALwJtcv49xUKS2U2i79h1kX6NEY", "ticker": "USDT.vETH"},
     {"currencyid": "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd", "ticker": "USDC.vETH"},
-    {"currencyid": "iHax5qYQGbcMGqJKKrPorpzUBX2oFFXGnY", "ticker": "PURE.vETH"},
-    {"currencyid": "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU", "ticker": "tBTC.vETH"},
-    {"currencyid": "iExBJfZYK7KREDpuhj6PzZBzqMAKaFg7d2", "ticker": "vARRR" },
-    {"currencyid": "i3f7tSctFkiPpiedY8QR5Tep9p4qDVebDx", "ticker": "Bridge.vETH" },
-    {"currencyid": "i4Xr5TAMrDTD99H69EemhjDxJ4ktNskUtc", "ticker": "Switch" }
+    {"currencyid": "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU", "ticker": "PURE.vETH"},
+    {"currencyid": "iEnQEjjozf1HZkqFT9U4NKnzz1iGZ7LbJ4", "ticker": "TRAC.vETH"},
+    {"currencyid": "iNtUUdjsqV34snGZJerAvPLaojo6tV9sfd", "ticker": "MARS4.vETH"}
 ]
 
 def get_ticker_by_currency_id(currency_id):
@@ -48,19 +48,22 @@ def get_ticker_by_currency_id(currency_id):
         return currency["ticker"]
     return "Currency not found"
 
-def aggregate_reserve_data(height, rangevalue, currency_name, currencies_data):
+# New code which checks if the next block contains the values of the previous block, if yes then it doesnt add that block values since its already added.
+# Eliminates unnecessary additions to the volume values.
+def aggregate_reserve_data_bridgeveth(height, rangevalue):
+    bridgeveth_currencies_data = {
+        "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV": {"total_reserve": 0},
+        "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X": {"total_reserve": 0},
+        "iCkKJuJScy4Z6NSDK7Mt42ZAB2NEnAE1o4": {"total_reserve": 0},
+        "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM": {"total_reserve": 0}
+    }
+
     prev_reserve_in = None
     prev_reserve_out = None
-    print(f"Getting info for {currency_name}")
-    
-    # Track reserve data per block
-    reserve_data_per_block = []
-
+    print("Getting info for Bridge.vETH")
     for _ in range(rangevalue):
-        response = getcurrencystate(currency_name, height)
-        block_data = {}
-        
-        for currency_id, data in currencies_data.items():
+        response = getcurrencystate("Bridge.vETH", height)
+        for currency_id, data in bridgeveth_currencies_data.items():
             currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
             reserve_in = currency_info['reservein']
             reserve_out = currency_info['reserveout']
@@ -68,28 +71,31 @@ def aggregate_reserve_data(height, rangevalue, currency_name, currencies_data):
                 data['total_reserve'] += reserve_in + reserve_out
                 prev_reserve_in = reserve_in
                 prev_reserve_out = reserve_out
-            
-            block_data[currency_id] = reserve_in + reserve_out
 
-        reserve_data_per_block.append(block_data)
         height = str(int(height) - 1)
         print(f"Fetching stats for block {height}")
         time.sleep(0.2)
     
-    return reserve_data_per_block
+    # Fetch currency names and structure the result
+    result = {}
+    for currency_id, data in bridgeveth_currencies_data.items():
+        currency_name = get_ticker_by_currency_id(currency_id)
+        result[currency_name] = data['total_reserve']
 
-def update_reserve_data(height, numblocks, currency_name, currencies_data, reserve_data_per_block):
+    return result
+
+def aggregate_reserve_data_switch(height, rangevalue):
+    switchbasket_currencies_data = {
+        "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd": {"total_reserve": 0},
+        "iC5TQFrFXSYLQGkiZ8FYmZHFJzaRF5CYgE": {"total_reserve": 0},
+    }
+
     prev_reserve_in = None
     prev_reserve_out = None
-    print(f"Updating info for {currency_name}")
-
-    new_reserve_data_per_block = []
-
-    for _ in range(numblocks):
-        response = getcurrencystate(currency_name, height)
-        block_data = {}
-
-        for currency_id, data in currencies_data.items():
+    print("Getting info for Switch")
+    for _ in range(rangevalue):
+        response = getcurrencystate("Switch", height)
+        for currency_id, data in switchbasket_currencies_data.items():
             currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
             reserve_in = currency_info['reservein']
             reserve_out = currency_info['reserveout']
@@ -98,42 +104,66 @@ def update_reserve_data(height, numblocks, currency_name, currencies_data, reser
                 prev_reserve_in = reserve_in
                 prev_reserve_out = reserve_out
             
-            block_data[currency_id] = reserve_in + reserve_out
-
-        new_reserve_data_per_block.append(block_data)
         height = str(int(height) - 1)
         print(f"Fetching stats for block {height}")
         time.sleep(0.2)
+    
+    # Fetch currency names and structure the result
+    result = {}
+    for currency_id, data in switchbasket_currencies_data.items():
+        currency_name = get_ticker_by_currency_id(currency_id)
+        result[currency_name] = data['total_reserve']
 
-    # Remove the oldest blocks from the total reserve
-    for old_block_data in reserve_data_per_block[:numblocks]:
-        for currency_id, reserve in old_block_data.items():
-            currencies_data[currency_id]['total_reserve'] -= reserve
+    return result
 
-    # Add the new blocks to the total reserve
-    for new_block_data in new_reserve_data_per_block:
-        for currency_id, reserve in new_block_data.items():
-            currencies_data[currency_id]['total_reserve'] += reserve
+def aggregate_reserve_data_pure(height, rangevalue):
+    purebasket_currencies_data = {
+        "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU": {"total_reserve": 0},
+    }
 
-    # Update the reserve data list
-    reserve_data_per_block = reserve_data_per_block[numblocks:] + new_reserve_data_per_block
-
-    return reserve_data_per_block
+    prev_reserve_in = None
+    prev_reserve_out = None
+    print("Getting info for Pure")
+    for _ in range(rangevalue):
+        response = getcurrencystate("Pure", height)
+        for currency_id, data in purebasket_currencies_data.items():
+            currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
+            reserve_in = currency_info['reservein']
+            reserve_out = currency_info['reserveout']
+            if reserve_in != prev_reserve_in or reserve_out != prev_reserve_out:
+                data['total_reserve'] += reserve_in + reserve_out
+                prev_reserve_in = reserve_in
+                prev_reserve_out = reserve_out
+            
+        height = str(int(height) - 1)
+        print(f"Fetching stats for block {height}")
+        time.sleep(0.2)
+    
+    # Fetch currency names and structure the result
+    result = {}
+    for currency_id, data in purebasket_currencies_data.items():
+        currency_name = get_ticker_by_currency_id(currency_id)
+        result[currency_name] = data['total_reserve']
+    
+    return result
 
 def save_to_json(data):
     with open('temp_data.json', 'w') as file:
         json.dump(data, file)
 
-def add_to_json(new_data):
+def add_to_json(new_data, old_data):
     with open('temp_data.json', 'r') as file:
         existing_data = json.load(file)
-    
+    # Subtract old data
+    for key, value in old_data.items():
+        if key in existing_data:
+            existing_data[key] -= value
+    # Add new data
     for key, value in new_data.items():
         if key in existing_data:
             existing_data[key] += value
         else:
             existing_data[key] = value
-    
     with open('temp_data.json', 'w') as file:
         json.dump(existing_data, file)
 
@@ -149,41 +179,27 @@ def merge_json_data(data1, data2, data3):
 
 def fetch_and_save_data():
     value = []
+    bridgeveth = {}
+    switch = {}
+    pure = {}
     height = get_block_count()
     value.append(height)
     print(f"Latest block height is: {height}")
     print(f"Block height saved to memory {value[0]}")
     print("")
-
-    bridgeveth_currencies_data = {
-        "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV": {"total_reserve": 0},
-        "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X": {"total_reserve": 0},
-        "iCkKJuJScy4Z6NSDK7Mt42ZAB2NEnAE1o4": {"total_reserve": 0},
-        "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM": {"total_reserve": 0}
-    }
-
-    switchbasket_currencies_data = {
-        "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd": {"total_reserve": 0},
-        "iC5TQFrFXSYLQGkiZ8FYmZHFJzaRF5CYgE": {"total_reserve": 0},
-    }
-
-    purebasket_currencies_data = {
-        "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU": {"total_reserve": 0},
-    }
-
     if height is not None:
-        reserve_data_per_block_bridgeveth = aggregate_reserve_data(str(value[0]), 1440, "Bridge.vETH", bridgeveth_currencies_data)
-        reserve_data_per_block_switch = aggregate_reserve_data(str(value[0]), 1440, "Switch", switchbasket_currencies_data)
-        reserve_data_per_block_pure = aggregate_reserve_data(str(value[0]), 1440, "Pure", purebasket_currencies_data)
-        
-        reservevolume1 = {get_ticker_by_currency_id(k): v['total_reserve'] for k, v in bridgeveth_currencies_data.items()}
-        reservevolume2 = {get_ticker_by_currency_id(k): v['total_reserve'] for k, v in switchbasket_currencies_data.items()}
-        reservevolume3 = {get_ticker_by_currency_id(k): v['total_reserve'] for k, v in purebasket_currencies_data.items()}
-
+        reservevolume1 = aggregate_reserve_data_bridgeveth(str(value[0]), 1440)
+        print("Sleeping for 60 secs.... Trying to not rate-limit the API")
+        time.sleep(60)
+        print("")
+        reservevolume2 = aggregate_reserve_data_switch(str(value[0]), 1440)
+        print("Sleeping for 60 secs.... Trying to not rate-limit the API")
+        time.sleep(60)
+        print("")
+        reservevolume3 = aggregate_reserve_data_pure(str(value[0]), 1440)
         bridgereserves = merge_json_data(reservevolume1, reservevolume2, reservevolume3)
         save_to_json(bridgereserves)
         print("Data saved to JSON file.")
-    
     while True:
         print(f"Sleeping for 15 mins...")
         time.sleep(900)  # Sleep for 15 mins
@@ -191,23 +207,28 @@ def fetch_and_save_data():
         currentheight = get_block_count()
         numblocks = int(currentheight) - int(value[0])
         value.append(currentheight)
-        print(f"Latest block height is: {currentheight}")
-        print(f"Block height saved to memory {value[-1]}")
+        print(f"Latest block height is: {height}")
+        print(f"Block height saved to memory {value[0]}")
         print("")
         print(f"During the period of 15 mins, {numblocks} blocks have been found.")
         print(f"Fetching stats for {numblocks} blocks")
-
-        reserve_data_per_block_bridgeveth = update_reserve_data(str(currentheight), numblocks, "Bridge.vETH", bridgeveth_currencies_data, reserve_data_per_block_bridgeveth)
-        reserve_data_per_block_switch = update_reserve_data(str(currentheight), numblocks, "Switch", switchbasket_currencies_data, reserve_data_per_block_switch)
-        reserve_data_per_block_pure = update_reserve_data(str(currentheight), numblocks, "Pure", purebasket_currencies_data, reserve_data_per_block_pure)
-        
-        reservevolume1 = {get_ticker_by_currency_id(k): v['total_reserve'] for k, v in bridgeveth_currencies_data.items()}
-        reservevolume2 = {get_ticker_by_currency_id(k): v['total_reserve'] for k, v in switchbasket_currencies_data.items()}
-        reservevolume3 = {get_ticker_by_currency_id(k): v['total_reserve'] for k, v in purebasket_currencies_data.items()}
-        
-        newbridgereserves = merge_json_data(reservevolume1, reservevolume2, reservevolume3)
-        add_to_json(newbridgereserves)
+        newreservevolume1 = aggregate_reserve_data_bridgeveth(str(height), numblocks)
+        print("Sleeping for 60 secs.... Trying to not rate-limit the API")
+        time.sleep(60)
+        print("")
+        newreservevolume2 = aggregate_reserve_data_switch(str(height), numblocks)
+        print("Sleeping for 60 secs.... Trying to not rate-limit the API")
+        time.sleep(60)
+        print("")
+        newreservevolume3 = aggregate_reserve_data_pure(str(height), numblocks)
+        newbridgereserves = merge_json_data(newreservevolume1, newreservevolume2, newreservevolume3)
+        old_data = merge_json_data(bridgeveth, switch, pure)
+        add_to_json(newbridgereserves, old_data)
         print("Data saved to JSON file.")
+        bridgeveth = newreservevolume1
+        switch = newreservevolume2
+        pure = newreservevolume3
+        print("Updated the values in the local JSON dictionary")
 
 def run():
     try:
@@ -218,5 +239,4 @@ def run():
         print(f"An Error occurred: {e}, trying after 60 seconds...")
         time.sleep(60)
         run()
-
 run()
