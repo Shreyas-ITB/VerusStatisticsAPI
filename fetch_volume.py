@@ -59,8 +59,20 @@ def aggregate_reserve_data_bridgeveth(height, rangevalue):
         "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM": {"total_reserve": 0}
     }
 
-    prev_reserve_in = None
-    prev_reserve_out = None
+    prev_reserve_in = {
+        "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV": None,
+        "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X": None,
+        "iCkKJuJScy4Z6NSDK7Mt42ZAB2NEnAE1o4": None,
+        "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM": None
+    }
+    
+    prev_reserve_out = {
+        "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV": None,
+        "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X": None,
+        "iCkKJuJScy4Z6NSDK7Mt42ZAB2NEnAE1o4": None,
+        "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM": None
+    }
+
     print("Getting info for Bridge.vETH")
     for _ in range(rangevalue):
         response = getcurrencystate("Bridge.vETH", height)
@@ -68,10 +80,12 @@ def aggregate_reserve_data_bridgeveth(height, rangevalue):
             currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
             reserve_in = currency_info['reservein']
             reserve_out = currency_info['reserveout']
-            if reserve_in != prev_reserve_in or reserve_out != prev_reserve_out:
+
+            if reserve_in != prev_reserve_in[currency_id] or reserve_out != prev_reserve_out[currency_id]:
                 data['total_reserve'] += reserve_in + reserve_out
-                prev_reserve_in = reserve_in
-                prev_reserve_out = reserve_out
+                print(f"Bridge transaction: Total reserve of {get_ticker_by_currency_id(currency_id)} updated to {data['total_reserve']}")
+                prev_reserve_in[currency_id] = reserve_in
+                prev_reserve_out[currency_id] = reserve_out
 
         height = str(int(height) - 1)
         print(f"Fetching stats for block {height}")
@@ -91,8 +105,16 @@ def aggregate_reserve_data_switch(height, rangevalue):
         "iC5TQFrFXSYLQGkiZ8FYmZHFJzaRF5CYgE": {"total_reserve": 0},
     }
 
-    prev_reserve_in = None
-    prev_reserve_out = None
+    prev_reserve_in = {
+        "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd": None,
+        "iC5TQFrFXSYLQGkiZ8FYmZHFJzaRF5CYgE": None
+    }
+    
+    prev_reserve_out = {
+        "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd": None,
+        "iC5TQFrFXSYLQGkiZ8FYmZHFJzaRF5CYgE": None
+    }
+
     print("Getting info for Switch")
     for _ in range(rangevalue):
         response = getcurrencystate("Switch", height)
@@ -100,10 +122,11 @@ def aggregate_reserve_data_switch(height, rangevalue):
             currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
             reserve_in = currency_info['reservein']
             reserve_out = currency_info['reserveout']
-            if reserve_in != prev_reserve_in or reserve_out != prev_reserve_out:
+            if reserve_in != prev_reserve_in[currency_id] or reserve_out != prev_reserve_out[currency_id]:
                 data['total_reserve'] += reserve_in + reserve_out
-                prev_reserve_in = reserve_in
-                prev_reserve_out = reserve_out
+                print(f"Bridge transaction: Total reserve of {get_ticker_by_currency_id(currency_id)} updated to {data['total_reserve']}")
+                prev_reserve_in[currency_id] = reserve_in
+                prev_reserve_out[currency_id] = reserve_out
             
         height = str(int(height) - 1)
         print(f"Fetching stats for block {height}")
@@ -122,8 +145,14 @@ def aggregate_reserve_data_pure(height, rangevalue):
         "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU": {"total_reserve": 0},
     }
 
-    prev_reserve_in = None
-    prev_reserve_out = None
+    prev_reserve_in = {
+        "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU": None
+    }
+    
+    prev_reserve_out = {
+        "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU": None
+    }
+
     print("Getting info for Pure")
     for _ in range(rangevalue):
         response = getcurrencystate("Pure", height)
@@ -131,10 +160,11 @@ def aggregate_reserve_data_pure(height, rangevalue):
             currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
             reserve_in = currency_info['reservein']
             reserve_out = currency_info['reserveout']
-            if reserve_in != prev_reserve_in or reserve_out != prev_reserve_out:
+            if reserve_in != prev_reserve_in[currency_id] or reserve_out != prev_reserve_out[currency_id]:
                 data['total_reserve'] += reserve_in + reserve_out
-                prev_reserve_in = reserve_in
-                prev_reserve_out = reserve_out
+                print(f"Bridge transaction: Total reserve of {get_ticker_by_currency_id(currency_id)} updated to {data['total_reserve']}")
+                prev_reserve_in[currency_id] = reserve_in
+                prev_reserve_out[currency_id] = reserve_out
             
         height = str(int(height) - 1)
         print(f"Fetching stats for block {height}")
