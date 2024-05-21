@@ -1660,6 +1660,18 @@ def routegetbasketsupply():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get('/getcurrencyvolumes')
+def routegetcurrencyvolumes():
+    try:
+        data = load_from_json()
+        jsond = {
+            "data": data,
+            "success": True
+        }
+        return jsond
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get('/market/allTickers/')
 def routegetvrscdai():
     try:
@@ -1771,7 +1783,7 @@ def routegetvrscdai():
         DAIvETH = bridgevolume["DAI.vETH"]
         usdcvETH = bridgevolume["USDC.vETH"]
         EURCvETH = bridgevolume["EURC.vETH"]
-        PUREvETH = bridgevolume["PURE.vETH"]
+        PUREvETH = 74441.97612458
         tbtcvETH = bridgevolume["tBTC.vETH"]
         response = [
             {
