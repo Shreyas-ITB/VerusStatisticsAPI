@@ -178,6 +178,44 @@ def aggregate_reserve_data_pure(height, rangevalue):
     
     return result
 
+def aggregate_reserve_data_kaiju(height, rangevalue):
+    purebasket_currencies_data = {
+        "i9oCSqKALwJtcv49xUKS2U2i79h1kX6NEY": {"total_reserve": 0},
+    }
+
+    prev_reserve_in = {
+        "i9oCSqKALwJtcv49xUKS2U2i79h1kX6NEY": None
+    }
+    
+    prev_reserve_out = {
+        "i9oCSqKALwJtcv49xUKS2U2i79h1kX6NEY": None
+    }
+
+    print("Getting info for Kaiju")
+    for _ in range(rangevalue):
+        response = getcurrencystate("Kaiju", height)
+        for currency_id, data in purebasket_currencies_data.items():
+            currency_info = response['result'][0]['currencystate']['currencies'][currency_id]
+            reserve_in = currency_info['reservein']
+            reserve_out = currency_info['reserveout']
+            if reserve_in != prev_reserve_in[currency_id] or reserve_out != prev_reserve_out[currency_id]:
+                data['total_reserve'] += reserve_in + reserve_out
+                print(f"Bridge transaction: Total reserve of {get_ticker_by_currency_id(currency_id)} updated to {data['total_reserve']}")
+                prev_reserve_in[currency_id] = reserve_in
+                prev_reserve_out[currency_id] = reserve_out
+            
+        height = str(int(height) - 1)
+        print(f"Fetching stats for block {height}")
+        time.sleep(0.2)
+    
+    # Fetch currency names and structure the result
+    result = {}
+    for currency_id, data in purebasket_currencies_data.items():
+        currency_name = get_ticker_by_currency_id(currency_id)
+        result[currency_name] = data['total_reserve']
+    
+    return result
+
 def save_to_json(data):
     with open('temp_data.json', 'w') as file:
         json.dump(data, file)
@@ -213,6 +251,7 @@ def fetch_and_save_data():
     bridgeveth = {}
     switch = {}
     pure = {}
+    kaiju = {}
     height = get_block_count()
     value.append(height)
     print(f"Latest block height is: {height}")
@@ -228,7 +267,11 @@ def fetch_and_save_data():
         time.sleep(60)
         print("")
         reservevolume3 = aggregate_reserve_data_pure(str(value[0]), 1440)
-        bridgereserves = merge_json_data(reservevolume1, reservevolume2, reservevolume3)
+        print("Sleeping for 60 secs.... Trying to not rate-limit the API")
+        time.sleep(60)
+        print("")
+        reservevolume4 = aggregate_reserve_data_kaiju(str(value[0]), 1440)
+        bridgereserves = merge_json_data(reservevolume1, reservevolume2, reservevolume3, reservevolume4)
         save_to_json(bridgereserves)
         print("Data saved to JSON file.")
     while True:
@@ -252,13 +295,18 @@ def fetch_and_save_data():
         time.sleep(60)
         print("")
         newreservevolume3 = aggregate_reserve_data_pure(str(height), numblocks)
-        newbridgereserves = merge_json_data(newreservevolume1, newreservevolume2, newreservevolume3)
-        old_data = merge_json_data(bridgeveth, switch, pure)
+        print("Sleeping for 60 secs.... Trying to not rate-limit the API")
+        time.sleep(60)
+        print("")
+        newreservevolume4 = aggregate_reserve_data_kaiju(str(height), numblocks)
+        newbridgereserves = merge_json_data(newreservevolume1, newreservevolume2, newreservevolume3, newreservevolume4)
+        old_data = merge_json_data(bridgeveth, switch, pure, kaiju)
         add_to_json(newbridgereserves, old_data)
         print("Data saved to JSON file.")
         bridgeveth = newreservevolume1
         switch = newreservevolume2
         pure = newreservevolume3
+        kaiju = newreservevolume4
         print("Updated the values in the local JSON dictionary")
 
 def run():
