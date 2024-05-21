@@ -236,13 +236,15 @@ def add_to_json(new_data, old_data):
     with open('temp_data.json', 'w') as file:
         json.dump(existing_data, file)
 
-def merge_json_data(data1, data2, data3):
+def merge_json_data(data1, data2, data3, data4):
     merged_data = {}
     for key, value in data1.items():
         merged_data[key] = value
     for key, value in data2.items():
         merged_data[key] = value
     for key, value in data3.items():
+        merged_data[key] = value
+    for key, value in data4.items():
         merged_data[key] = value
     return merged_data
 
