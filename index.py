@@ -202,11 +202,7 @@ def get_imports(currency: str):
     }
 
     response = requests.post(url, json=json_data)
-
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return {"error": "Failed to retrieve data"}
+    return response.json()
 
 def getvarrrblocks():
     req = requests.get("https://varrrexplorer.piratechain.com/api/getblockcount")
@@ -223,11 +219,7 @@ def get_imports_with_blocks(currency: str, fromblk: int, toblk: int):
     }
 
     response = requests.post(url, json=json_data)
-
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return {"error": "Failed to retrieve data"}
+    return response.json()
 
 def get_address_balance(address):
     json_data = {
@@ -1068,7 +1060,7 @@ def get_rawmempool_route():
         "mempool_count": mempool_count,
     }
 
-@app.get('/fetchblockhash/<longest_chain>')
+@app.get('/fetchblockhash/{longest_chain}')
 def fetch_block_hash_route(longest_chain):
     request_data = {
         "method": "post",
@@ -1090,7 +1082,7 @@ def fetch_block_hash_route(longest_chain):
     # In your actual implementation, you can replace the simulated response with the real block hash data.
     return {"block_hash": block_hash_data}
 
-@app.get('/fetchtransactiondata/<transaction_id>')
+@app.get('/fetchtransactiondata/{transaction_id}')
 def fetch_transaction_data_route(transaction_id):
     request_config_get_raw_transaction = {
         "method": "post",
@@ -1590,15 +1582,18 @@ def geteurceurcreserveprice():
     resp = get_reserve_eurc_price(reserves)
     return resp, "success: True"
 
-@app.get('/getimports/<currency>/')
+@app.get('/getimports/{currency}')
 def routegetimports(currency: str):
     # newfromblk = int(fromblk)
     # newtoblk = int(toblk)
-    newcurrency = str(currency)
-    response = get_imports(newcurrency)
-    return response
+    try:
+        newcurrency = str(currency)
+        response = get_imports(newcurrency)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.get('/getimports_blk/<currency>/<fromblk>/<toblk>/')
+@app.get('/getimports_blk/{currency}/{fromblk}/{toblk}/')
 def routegetimports_blk(currency: str, fromblk: int, toblk: int):
     newfromblk = int(fromblk)
     newtoblk = int(toblk)
@@ -1606,7 +1601,7 @@ def routegetimports_blk(currency: str, fromblk: int, toblk: int):
     response = get_imports_with_blocks(newcurrency, newfromblk, newtoblk)
     return response
 
-@app.get('/getvolume/<currencyid>/<currency>/<fromblk>/<toblk>')
+@app.get('/getvolume/{currencyid}/{currency}/{fromblk}/{toblk}')
 def routegetvolume(currencyid: str, currency: str, fromblk: int, toblk: int):
     newfromblk = int(fromblk)
     newtoblk = int(toblk)
@@ -1615,7 +1610,7 @@ def routegetvolume(currencyid: str, currency: str, fromblk: int, toblk: int):
     response = calculate_reserve_balance(newcurrencyid, newcurrency, newfromblk, newtoblk)
     return response, "success: True"
 
-@app.get('/gettotalvolume/<currency>/<fromblk>/<toblk>')
+@app.get('/gettotalvolume/{currency}/{fromblk}/{toblk}')
 def routegettotalvolume(currency: str, fromblk: int, toblk: int):
     newfromblk = int(fromblk)
     newtoblk = int(toblk)
@@ -1623,7 +1618,7 @@ def routegettotalvolume(currency: str, fromblk: int, toblk: int):
     response = calculate_total_balances(newcurrency, newfromblk, newtoblk)
     return response, "success: True"
 
-@app.get('/gettransactions/<currency>/<fromblk>/<toblk>')
+@app.get('/gettransactions/{currency}/{fromblk}/{toblk}')
 def routegettxns(currency: str, fromblk: int, toblk: int):
     newfromblk = int(fromblk)
     newtoblk = int(toblk)
@@ -1631,7 +1626,7 @@ def routegettxns(currency: str, fromblk: int, toblk: int):
     response = extract_transfers(newcurrency, newfromblk, newtoblk)
     return response
 
-@app.get('/getaddressbalance/<address>')
+@app.get('/getaddressbalance/{address}')
 def routegetaddressbalance(address: str):
     newaddress = str(address)
     response = get_address_balance(newaddress)
