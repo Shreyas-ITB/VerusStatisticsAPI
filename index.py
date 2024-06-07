@@ -428,10 +428,67 @@ def diff_format(num):
         num /= 1000.0
     return '{}{}'.format('{:f}'.format(num).rstrip('0').rstrip('.'), ['', ' Thousand', ' Million', ' Billion', ' Trillion'][magnitude])
 
+def getbridgeveth_supply():
+    requestData = {
+        "method": "post",
+        "url": RPCURL,
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrency",
+            "params": ["Bridge.vETH"],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+    return response["result"]["lastconfirmedcurrencystate"]["supply"]
+
+def getswitch_supply():
+    requestData = {
+        "method": "post",
+        "url": RPCURL,
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrency",
+            "params": ["Switch"],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+    return response["result"]["lastconfirmedcurrencystate"]["supply"]
+
+def getpure_supply():
+    requestData = {
+        "method": "post",
+        "url": RPCURL,
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrency",
+            "params": ["Pure"],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+    return response["result"]["lastconfirmedcurrencystate"]["supply"]
+
+def getkaiju_supply():
+    requestData = {
+        "method": "post",
+        "url": RPCURL,
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrency",
+            "params": ["Kaiju"],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+    return response["result"]["lastconfirmedcurrencystate"]["supply"]
+
 def get_currencyconverters_pure():
     networkblocks = latest_block()
     reserves = dai_reserves()
     resp = get_reserve_dai_price(reserves)
+    supply = getpure_supply()
     requestData = {
         "method": "post",
         "url": "https://rpc.vrsc.komodefi.com/",
@@ -484,7 +541,7 @@ def get_currencyconverters_pure():
     return {
         "bridge": "Pure",
         "initialsupply": total_initialsupply,
-        "supply": float("74441.97612458"),
+        "supply": supply,
         "startblock": total_startblock,
         "block": networkblocks,
         "blk_volume": volume,
@@ -498,6 +555,7 @@ def get_currencyconverters_bridgeveth():
     networkblocks = latest_block()
     reserves = dai_reserves()
     resp = get_reserve_dai_price(reserves)
+    supply = getbridgeveth_supply()
     requestData = {
         "method": "post",
         "url": "https://rpc.vrsc.komodefi.com/",
@@ -550,7 +608,7 @@ def get_currencyconverters_bridgeveth():
     return {
         "bridge": "Bridge.veth",
         "initialsupply": total_initialsupply,
-        "supply": float("1193956.17576754"),
+        "supply": supply,
         "startblock": total_startblock,
         "block": networkblocks,
         "blk_volume": volume,
@@ -568,6 +626,7 @@ def get_currencyconverters_switch():
     networkblocks = latest_block()
     reserves = dai_reserves()
     resp = get_reserve_dai_price(reserves)
+    supply = getswitch_supply()
     requestData = {
         "method": "post",
         "url": "https://rpc.vrsc.komodefi.com/",
@@ -620,7 +679,7 @@ def get_currencyconverters_switch():
     return {
         "bridge": "Switch",
         "initialsupply": total_initialsupply,
-        "supply": float("13837.92424038"),
+        "supply": supply,
         "startblock": total_startblock,
         "block": networkblocks,
         "blk_volume": volume,
@@ -638,6 +697,7 @@ def get_currencyconverters_kaiju():
     networkblocks = latest_block()
     reserves = dai_reserves()
     resp = get_reserve_dai_price(reserves)
+    supply = getkaiju_supply()
     requestData = {
         "method": "post",
         "url": "https://rpc.vrsc.komodefi.com/",
@@ -690,7 +750,7 @@ def get_currencyconverters_kaiju():
     return {
         "bridge": "Kaiju",
         "initialsupply": total_initialsupply,
-        "supply": float("97086.59369916"),
+        "supply": supply,
         "startblock": total_startblock,
         "block": networkblocks,
         "blk_volume": volume,
