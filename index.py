@@ -4,6 +4,7 @@ from dotenv import load_dotenv, find_dotenv
 import json
 from fastapi import FastAPI, HTTPException
 import uvicorn
+from datetime import datetime, timezone
 
 app = FastAPI()
 load_dotenv(find_dotenv())
@@ -44,6 +45,25 @@ def send_request(method, url, headers, data):
 # def send_request(method, url, headers, data):
 #     response = requests.request(method, url, headers=headers, json=data, auth=(RPCUSER, RPCPASS))
 #     return response.json()
+
+def getallbaskets():
+    requestData = {
+        "method": "post",
+        "url": RPCURL,
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrencyconverters",
+            "params": ["VRSC"],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+    if isinstance(response, dict) and 'result' in response and isinstance(response['result'], list):
+        fully_qualified_names = [item["fullyqualifiedname"] for item in response['result']]
+        return fully_qualified_names
+    else:
+        print("Unexpected response format")
+        return []
 
 def get_bridge_currency_bridgeveth():
     requestData = {
@@ -488,15 +508,21 @@ def getcurrencyvolumeinfo(currency, fromblock, endblock, interval, volumecurrenc
         }
     }
     response = send_request(**requestData)
+    
     try:
         nresponse = response['result'][1]['conversiondata']
-        new_response = [
-            nresponse['volumecurrency'],
-            nresponse['volumepairs'],
-            nresponse['volumethisinterval']
-        ]
-    except KeyError:
-        new_response = response
+        if all(key in nresponse for key in ["volumecurrency", "volumepairs", "volumethisinterval"]):
+            new_response = [
+                {
+                    "volumecurrency": nresponse['volumecurrency'],
+                    "volumepairs": nresponse['volumepairs'],
+                    "totalvolume": nresponse['volumethisinterval']
+                }
+            ]
+        else:
+            new_response = None
+    except (KeyError, IndexError):
+        new_response = None
     return new_response
 
 def calculatevolumeinfo():
@@ -1764,441 +1790,24 @@ def routegetcurrencyvolumes():
     jsond = calculatevolumeinfo()
     return jsond
 
-@app.get('/market/allTickers/')
-def routegetvrscdai():
-    try:
-        url = 'https://explorer.verus.io/api/getblockcount'
-        height = requests.get(url).text
-        reserves = dai_reserves()
-        newreserves = vrsc_reserves()
-        mkrreserves = mkr_reserves()
-        ethreserves = eth_reserves()
-        usdcreserves = usdc_reserves()
-        eurcreserves = eurc_reserves()
-        purereserves = pure_reserves()
-        tbtcreserves = tbtc_reserves()
-        ethprice = get_reserve_eth_price(ethreserves)
-        mkrprice = get_reserve_mkr_price(mkrreserves)
-        vrscprice = get_reserve_vrsc_price(newreserves)
-        daiprice = get_reserve_dai_price(reserves)
-        usdcprice = get_reserve_usdc_price(usdcreserves)
-        eurcprice = get_reserve_eurc_price(eurcreserves)
-        pureprice = get_reserve_pure_price(purereserves)
-        tbtcprice = get_reserve_tbtc_price(tbtcreserves)
-        bridgevethreservecurrencies = get_bridge_currency_bridgeveth()
-        raceconditionreservecurrencies = get_bridge_currency_racecondition()
-        kaijubasketreservecurrencies = get_bridge_currency_kaiju()
-        purebasketreservecurrencies = get_bridge_currency_pure()
-        switchbasketreservecurrencies = get_bridge_currency_switch()
-        vrsc = next((item for item in bridgevethreservecurrencies if item["currencyid"] == "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV"), None)
-        VRSCBridgeReservePrice = vrsc['priceinreserve']
-        dai = next((item for item in bridgevethreservecurrencies if item["currencyid"] == "iGBs4DWztRNvNEJBt4mqHszLxfKTNHTkhM"), None)
-        DAIBridgeReservePrice = dai['priceinreserve']
-        mkr = next((item for item in bridgevethreservecurrencies if item["currencyid"] == "iCkKJuJScy4Z6NSDK7Mt42ZAB2NEnAE1o4"), None)
-        MKRBridgeReservePrice = mkr['priceinreserve']
-        eth = next((item for item in bridgevethreservecurrencies if item["currencyid"] == "i9nwxtKuVYX4MSbeULLiK2ttVi6rUEhh4X"), None)
-        ETHBridgeReservePrice = eth['priceinreserve']
-        pure = next((item for item in purebasketreservecurrencies if item["currencyid"] == "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU"), None)
-        PUREBridgeReservePrice = pure['priceinreserve']
-        tbtc = next((item for item in kaijubasketreservecurrencies if item["currencyid"] == "iS8TfRPfVpKo5FVfSUzfHBQxo9KuzpnqLU"), None)
-        tbtcBridgeReservePrice = tbtc['priceinreserve']
-        usdc = next((item for item in switchbasketreservecurrencies if item["currencyid"] == "i61cV2uicKSi1rSMQCBNQeSYC3UAi9GVzd"), None)
-        usdcBridgeReservePrice = usdc['priceinreserve']
-        eurc = next((item for item in switchbasketreservecurrencies if item["currencyid"] == "iC5TQFrFXSYLQGkiZ8FYmZHFJzaRF5CYgE"), None)
-        EURCBridgeReservePrice = eurc['priceinreserve']
-        
-        ETHDAITotalBridgePrice = ETHBridgeReservePrice + DAIBridgeReservePrice
-        ETHDAITotalPrice = ethprice + daiprice
-        ETHMKRTotalBridgePrice = ETHBridgeReservePrice + MKRBridgeReservePrice
-        ETHMKRTotalPrice = ethprice + mkrprice
-        ETHVRSCTotalBridgePrice = ETHBridgeReservePrice + VRSCBridgeReservePrice
-        ETHVRSCTotalPrice = ethprice + vrscprice
-        ETHPURETotalBridgePrice = ETHBridgeReservePrice + PUREBridgeReservePrice
-        ETHPURETotalPrice = ethprice + pureprice
-        ETHTBTTCTotalBridgePrice = ETHBridgeReservePrice + tbtcBridgeReservePrice
-        ETHTBTTCTotalPrice = ethprice + tbtcprice
-        ETHTBTTCTotalBridgePrice = ETHBridgeReservePrice + usdcBridgeReservePrice
-        ETHTBTTCTotalPrice = ethprice + usdcprice
-        ETHEURCTotalBridgePrice = ETHBridgeReservePrice + EURCBridgeReservePrice
-        ETHEURCTotalPrice = ethprice + eurcprice
-        MKRDAITotalBridgePrice = MKRBridgeReservePrice + DAIBridgeReservePrice
-        MKRDAITotalPrice = mkrprice + daiprice
-        MKRVRSCTotalBridgePrice = MKRBridgeReservePrice + VRSCBridgeReservePrice
-        MKRVRSCTotalPrice = mkrprice + vrscprice
-        MKRETHTotalBridgePrice = MKRBridgeReservePrice + ETHBridgeReservePrice
-        MKRETHTotalPrice = mkrprice + ethprice
-        MKRPURETotalBridgePrice = MKRBridgeReservePrice + PUREBridgeReservePrice
-        MKRPURETotalPrice = mkrprice + pureprice
-        MKRTBTTCTotalBridgePrice = MKRBridgeReservePrice + tbtcBridgeReservePrice
-        MKRTBTTCTotalPrice = mkrprice + tbtcprice
-        MKRTBTTCTotalBridgePrice = MKRBridgeReservePrice + usdcBridgeReservePrice
-        MKRTBTTCTotalPrice = mkrprice + usdcprice
-        MKREURCTotalBridgePrice = MKRBridgeReservePrice + EURCBridgeReservePrice
-        MKREURCTotalPrice = mkrprice + eurcprice
-        DAIVRSCTotalBridgePrice = DAIBridgeReservePrice + VRSCBridgeReservePrice
-        DAIVRSCTotalPrice = daiprice + vrscprice
-        DAIMKRTotalBridgePrice = DAIBridgeReservePrice + MKRBridgeReservePrice
-        DAIMKRTotalPrice = daiprice + mkrprice
-        DAIETHTotalBridgePrice = DAIBridgeReservePrice + ETHBridgeReservePrice
-        DAIETHTotalPrice = daiprice + ethprice
-        DAIPURETotalBridgePrice = DAIBridgeReservePrice + PUREBridgeReservePrice
-        DAIPURETotalPrice = daiprice + pureprice
-        DAITBTTCTotalBridgePrice = DAIBridgeReservePrice + tbtcBridgeReservePrice
-        DAITBTTCTotalPrice = daiprice + tbtcprice
-        DAITBTTCTotalBridgePrice = DAIBridgeReservePrice + usdcBridgeReservePrice
-        DAITBTTCTotalPrice = daiprice + usdcprice
-        DAIEURCTotalBridgePrice = DAIBridgeReservePrice + EURCBridgeReservePrice
-        DAIEURCTotalPrice = daiprice + eurcprice
-        VRSCDAITotalBridgePrice = VRSCBridgeReservePrice + DAIBridgeReservePrice
-        VRSCDAITotalPrice = vrscprice + daiprice
-        VRSCMKRTotalBridgePrice = VRSCBridgeReservePrice + MKRBridgeReservePrice
-        VRSCMKRTotalPrice = vrscprice + mkrprice
-        VRSCETHTotalBridgePrice = VRSCBridgeReservePrice + ETHBridgeReservePrice
-        VRSCETHTotalPrice = vrscprice + ethprice
-        VRSCPURETotalBridgePrice = VRSCBridgeReservePrice + PUREBridgeReservePrice
-        VRSCPURETotalPrice = vrscprice + pureprice
-        VRSCTBTTCTotalBridgePrice = VRSCBridgeReservePrice + tbtcBridgeReservePrice
-        VRSCTBTTCTotalPrice = vrscprice + tbtcprice
-        VRSCTBTTCTotalBridgePrice = VRSCBridgeReservePrice + usdcBridgeReservePrice
-        VRSCTBTTCTotalPrice = vrscprice + usdcprice
-        VRSCEURCTotalBridgePrice = VRSCBridgeReservePrice + EURCBridgeReservePrice
-        VRSCEURCTotalPrice = vrscprice + eurcprice
-        bridgevethbalances = calculate_total_balances("Bridge.vETH")
-        raceconditionbalances = calculate_total_balances("RaceCondition")
-        kaijubasketbalances = calculate_total_balances("Kaiju")
-        purebasketbalances = calculate_total_balances("Pure")
-        switchbasketbalances = calculate_total_balances("Switch")
-        bridgevolume = load_from_json()
-        VRSC = bridgevolume["VRSC"]
-        vETH = bridgevolume["vETH"]
-        MKRvETH = bridgevolume["MKR.vETH"]
-        DAIvETH = bridgevolume["DAI.vETH"]
-        usdcvETH = bridgevolume["USDC.vETH"]
-        EURCvETH = bridgevolume["EURC.vETH"]
-        PUREvETH = 74441.97612458
-        tbtcvETH = bridgevolume["tBTC.vETH"]
-        response = [
-            {
-                "symbol": "VRSC-DAI",
-                "symbolName": "VRSC-DAI",
-                "DAIPrice": daiprice, 
-                "VRSCPrice": vrscprice,
-                "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * daiprice} DAI",
-                "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * daiprice} DAI",
-                "TotalBridgePrice": f"{VRSCDAITotalBridgePrice * daiprice} DAI",
-                "TotalPrice": f"{VRSCDAITotalPrice * daiprice} DAI",
-                "PairVolume": f"{VRSC + DAIvETH} DAI"
-            },
-            {
-                "symbol": "VRSC-MKR",
-                "symbolName": "VRSC-MKR",
-                "MKRPrice": mkrprice,
-                "VRSCPrice": vrscprice,
-                "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
-                "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * mkrprice} MKR",
-                "TotalBridgePrice": f"{VRSCMKRTotalBridgePrice * mkrprice} MKR",
-                "TotalPrice": f"{VRSCMKRTotalPrice * mkrprice} MKR",
-                "PairVolume": f"{VRSC + MKRvETH * mkrprice} MKR"
-
-            },
-            {
-                "symbol": "VRSC-ETH",
-                "symbolName": "VRSC-ETH",
-                "ETHPrice": ethprice,
-                "VRSCPrice": vrscprice,
-                "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * ethprice} ETH",
-                "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * ethprice} ETH",
-                "TotalBridgePrice": f"{VRSCETHTotalBridgePrice * ethprice} ETH",
-                "TotalPrice": f"{VRSCETHTotalPrice * ethprice} ETH",
-                "PairVolume": f"{VRSC + vETH * ethprice} ETH"
-            },
-            {
-                "symbol": "VRSC-PURE",
-                "symbolName": "VRSC-PURE",
-                "PUREPrice": pureprice,
-                "VRSCPrice": vrscprice,
-                "PUREBridgeReservePrice": f"{PUREBridgeReservePrice * pureprice} PURE",
-                "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * pureprice} PURE",
-                "TotalBridgePrice": f"{VRSCPURETotalBridgePrice * pureprice} PURE",
-                "TotalPrice": f"{VRSCPURETotalPrice * pureprice} PURE",
-                "PairVolume": f"{VRSC + PUREvETH * pureprice} PURE"
-            },
-            {
-                "symbol": "VRSC-tBTC",
-                "symbolName": "VRSC-tBTC",
-                "tBTCPrice": tbtcprice,
-                "VRSCPrice": vrscprice,
-                "tBTCBridgeReservePrice": f"{tbtcBridgeReservePrice * tbtcprice} tBTC",
-                "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * tbtcprice} tBTC",
-                "TotalBridgePrice": f"{VRSCTBTTCTotalBridgePrice * tbtcprice} tBTC",
-                "TotalPrice": f"{VRSCTBTTCTotalPrice * tbtcprice} tBTC",
-                "PairVolume": f"{VRSC + tbtcvETH * tbtcprice} tBTC"
-            },
-            {
-                "symbol": "VRSC-USDC",
-                "symbolName": "VRSC-USDC",
-                "usdcPrice": usdcprice,
-                "VRSCPrice": vrscprice,
-                "usdcBridgeReservePrice": f"{usdcBridgeReservePrice * usdcprice} USDC",
-                "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * usdcprice} USDC",
-                "TotalBridgePrice": f"{VRSCTBTTCTotalBridgePrice * usdcprice} USDC",
-                "TotalPrice": f"{VRSCTBTTCTotalPrice * usdcprice} USDC",
-                "PairVolume": f"{VRSC + usdcvETH * usdcprice} USDC"
-            },
-            {
-                "symbol": "VRSC-EURC",
-                "symbolName": "VRSC-EURC",
-                "EURCPrice": eurcprice,
-                "VRSCPrice": vrscprice,
-                "EURCBridgeReservePrice": f"{EURCBridgeReservePrice * eurcprice} EURC",
-                "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * eurcprice} EURC",
-                "TotalBridgePrice": f"{VRSCEURCTotalBridgePrice * eurcprice} EURC",
-                "TotalPrice": f"{VRSCEURCTotalPrice * eurcprice} EURC",
-                "PairVolume": f"{VRSC + EURCvETH * eurcprice} EURC"
-            },
-            {
-                "symbol": "ETH-DAI",
-                "symbolName": "ETH-DAI",
-                "DAIPrice": daiprice,
-                "ETHPrice": ethprice,
-                "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * daiprice} DAI",
-                "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * daiprice} DAI",
-                "TotalBridgePrice": f"{ETHDAITotalBridgePrice * daiprice} DAI",
-                "TotalPrice": f"{ETHDAITotalPrice * daiprice} DAI",
-                "PairVolume": f"{vETH + DAIvETH} DAI"
-            },
-            {
-                "symbol": "ETH-MKR",
-                "symbolName": "ETH-MKR",
-                "MKRPrice": mkrprice,
-                "ETHPrice": ethprice,
-                "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
-                "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * mkrprice} MKR",
-                "TotalBridgePrice": f"{ETHMKRTotalBridgePrice * mkrprice} MKR",
-                "TotalPrice": f"{ETHMKRTotalPrice * mkrprice} MKR",
-                "PairVolume": f"{vETH + MKRvETH * mkrprice} MKR"
-            },
-            {
-                "symbol": "ETH-VRSC",
-                "symbolName": "ETH-VRSC",
-                "VRSCPrice": vrscprice,
-                "ETHPrice": ethprice,
-                "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * vrscprice} VRSC",
-                "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * vrscprice} VRSC",
-                "TotalBridgePrice": f"{ETHVRSCTotalBridgePrice * vrscprice} VRSC",
-                "TotalPrice": f"{ETHVRSCTotalPrice * vrscprice} VRSC",
-                "PairVolume": f"{vETH + VRSC * vrscprice} VRSC"
-            },
-            {
-                "symbol": "ETH-PURE",
-                "symbolName": "ETH-PURE",
-                "PUREPrice": pureprice,
-                "ETHPrice": ethprice,
-                "PUREBridgeReservePrice": f"{PUREBridgeReservePrice * pureprice} PURE",
-                "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * pureprice} PURE",
-                "TotalBridgePrice": f"{ETHPURETotalBridgePrice * pureprice} PURE",
-                "TotalPrice": f"{ETHPURETotalPrice * pureprice} PURE",
-                "PairVolume": f"{vETH + PUREvETH * pureprice} PURE"
-            },
-            {
-                "symbol": "ETH-TBTC",
-                "symbolName": "ETH-TBTC",
-                "TBTCPrice": tbtcprice,
-                "ETHPrice": ethprice,
-                "TBTCBridgeReservePrice": f"{tbtcBridgeReservePrice * tbtcprice} TBTC",
-                "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * tbtcprice} TBTC",
-                "TotalBridgePrice": f"{ETHTBTTCTotalBridgePrice * tbtcprice} TBTC",
-                "TotalPrice": f"{ETHTBTTCTotalPrice * tbtcprice} TBTC",
-                "PairVolume": f"{vETH + tbtcvETH * tbtcprice} TBTC"
-            },
-            {
-                "symbol": "ETH-USDC",
-                "symbolName": "ETH-USDC",
-                "usdcPrice": usdcprice,
-                "ETHPrice": ethprice,
-                "usdcBridgeReservePrice": f"{usdcBridgeReservePrice * usdcprice} USDC",
-                "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * usdcprice} USDC",
-                "TotalBridgePrice": f"{ETHTBTTCTotalBridgePrice * usdcprice} USDC",
-                "TotalPrice": f"{ETHTBTTCTotalPrice * usdcprice} USDC",
-                "PairVolume": f"{vETH + usdcvETH * usdcprice} USDC"
-            },
-            {
-                "symbol": "ETH-EURC",
-                "symbolName": "ETH-EURC",
-                "EURCPrice": eurcprice,
-                "ETHPrice": ethprice,
-                "EURCBridgeReservePrice": f"{EURCBridgeReservePrice * eurcprice} EURC",
-                "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * eurcprice} EURC",
-                "TotalBridgePrice": f"{ETHEURCTotalBridgePrice * eurcprice} EURC",
-                "TotalPrice": f"{ETHEURCTotalPrice * eurcprice} EURC",
-                "PairVolume": f"{vETH + EURCvETH * eurcprice} EURC"
-            },
-            {
-                "symbol": "DAI-MKR",
-                "symbolName": "DAI-MKR",
-                "DAIPrice": daiprice,
-                "MKRPrice": mkrprice,
-                "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * mkrprice} MKR",
-                "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
-                "TotalBridgePrice": F"{DAIMKRTotalBridgePrice * mkrprice} MKR",
-                "TotalPrice": F"{DAIMKRTotalPrice * mkrprice} MKR",
-                "PairVolume": f"{DAIvETH + MKRvETH * mkrprice} MKR"
-            },
-            {
-                "symbol": "DAI-ETH",
-                "symbolName": "DAI-ETH",
-                "DAIPrice": daiprice,
-                "ETHPrice": ethprice,
-                "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * ethprice} ETH",
-                "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * ethprice} ETH",
-                "TotalBridgePrice": f"{DAIETHTotalBridgePrice * ethprice} ETH",
-                "TotalPrice": f"{DAIETHTotalPrice * ethprice} ETH",
-                "PairVolume": f"{DAIvETH + vETH * ethprice} ETH"
-
-            },
-            {
-                "symbol": "DAI-VRSC",
-                "symbolName": "DAI-VRSC",
-                "DAIPrice": daiprice,
-                "VRSCPrice": vrscprice,
-                "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * vrscprice} VRSC",
-                "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * vrscprice} VRSC",
-                "TotalBridgePrice": f"{DAIVRSCTotalBridgePrice * vrscprice} VRSC",
-                "TotalPrice": f"{DAIVRSCTotalPrice * vrscprice} VRSC",
-                "PairVolume": f"{DAIvETH + VRSC * vrscprice} VRSC"
-            },
-            {
-                "symbol": "DAI-PURE",
-                "symbolName": "DAI-PURE",
-                "DAIPrice": daiprice,
-                "PUREPrice": pureprice,
-                "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * pureprice} PURE",
-                "PUREBridgeReservePrice": f"{PUREBridgeReservePrice * pureprice} PURE",
-                "TotalBridgePrice": f"{DAIPURETotalBridgePrice * pureprice} PURE",
-                "TotalPrice": f"{DAIPURETotalPrice * pureprice} PURE",
-                "PairVolume": f"{DAIvETH + PUREvETH * pureprice} PURE"
-            },
-            {
-                "symbol": "DAI-TBTC",
-                "symbolName": "DAI-TBTC",
-                "DAIPrice": daiprice,
-                "TBTCPrice": tbtcprice,
-                "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * tbtcprice} TBTC",
-                "TBTCBridgeReservePrice": f"{tbtcBridgeReservePrice * tbtcprice} TBTC",
-                "TotalBridgePrice": f"{DAITBTTCTotalBridgePrice * tbtcprice} TBTC",
-                "TotalPrice": f"{DAITBTTCTotalPrice * tbtcprice} TBTC",
-                "PairVolume": f"{DAIvETH + tbtcvETH * tbtcprice} TBTC"
-            },
-            {
-                "symbol": "DAI-USDC",
-                "symbolName": "DAI-USDC",
-                "DAIPrice": daiprice,
-                "usdcPrice": usdcprice,
-                "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * usdcprice} USDC",
-                "usdcBridgeReservePrice": f"{usdcBridgeReservePrice * usdcprice} USDC",
-                "TotalBridgePrice": f"{DAITBTTCTotalBridgePrice * usdcprice} USDC",
-                "TotalPrice": f"{DAITBTTCTotalPrice * usdcprice} USDC",
-                "PairVolume": f"{DAIvETH + usdcvETH * usdcprice} USDC"
-            },
-            {
-                "symbol": "DAI-EURC",
-                "symbolName": "DAI-EURC",
-                "DAIPrice": daiprice,
-                "EURCPrice": eurcprice,
-                "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * eurcprice} EURC",
-                "EURCBridgeReservePrice": f"{EURCBridgeReservePrice * eurcprice} EURC",
-                "TotalBridgePrice": f"{DAIEURCTotalBridgePrice * eurcprice} EURC",
-                "TotalPrice": f"{DAIEURCTotalPrice * eurcprice} EURC",
-                "PairVolume": f"{DAIvETH + EURCvETH * eurcprice} EURC"
-            },
-            {
-                "symbol": "MKR-ETH",
-                "symbolName": "MKR-ETH",
-                "MKRPrice": mkrprice,
-                "ETHPrice": ethprice,
-                "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * ethprice} ETH",
-                "ETHBridgeReservePrice": f"{ETHBridgeReservePrice * ethprice} ETH",
-                "TotalBridgePrice": f"{MKRETHTotalBridgePrice * ethprice} ETH",
-                "TotalPrice": f"{MKRETHTotalPrice * ethprice} ETH",
-                "PairVolume": f"{MKRvETH + vETH * ethprice} ETH"
-            },
-            {
-                "symbol": "MKR-VRSC",
-                "symbolName": "MKR-VRSC",
-                "MKRPrice": mkrprice,
-                "VRSCPrice": vrscprice,
-                "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * vrscprice} VRSC",
-                "VRSCBridgeReservePrice": f"{VRSCBridgeReservePrice * vrscprice} VRSC",
-                "TotalBridgePrice": f"{MKRVRSCTotalBridgePrice * vrscprice} VRSC",
-                "TotalPrice": f"{MKRVRSCTotalPrice * vrscprice} VRSC",
-                "PairVolume": f"{MKRvETH + VRSC * vrscprice} VRSC"
-            },
-            {
-                "symbol": "MKR-DAI",
-                "symbolName": "MKR-DAI",
-                "DAIPrice": daiprice,
-                "MKRPrice": mkrprice,
-                "DAIBridgeReservePrice": f"{DAIBridgeReservePrice * mkrprice} MKR",
-                "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
-                "TotalBridgePrice": f"{MKRDAITotalBridgePrice * mkrprice} MKR",
-                "TotalPrice": f"{MKRDAITotalPrice * mkrprice} MKR",
-                "PairVolume": f"{MKRvETH + DAIvETH * mkrprice} MKR"
-            },
-            {
-                "symbol": "MKR-PURE",
-                "symbolName": "MKR-PURE",
-                "PUREPrice": pureprice,
-                "MKRPrice": mkrprice,
-                "PUREBridgeReservePrice": f"{PUREBridgeReservePrice * mkrprice} MKR",
-                "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
-                "TotalBridgePrice": f"{MKRPURETotalBridgePrice * mkrprice} MKR",
-                "TotalPrice": f"{MKRPURETotalPrice * mkrprice} MKR",
-                "PairVolume": f"{MKRvETH + PUREvETH * mkrprice} MKR"
-            },
-            {
-                "symbol": "MKR-TBTC",
-                "symbolName": "MKR-TBTC",
-                "TBTCPrice": tbtcprice,
-                "MKRPrice": mkrprice,
-                "TBTCBridgeReservePrice": f"{tbtcBridgeReservePrice * mkrprice} MKR",
-                "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
-                "TotalBridgePrice": f"{MKRTBTTCTotalBridgePrice * mkrprice} MKR",
-                "TotalPrice": f"{MKRTBTTCTotalPrice * mkrprice} MKR",
-                "PairVolume": f"{MKRvETH + tbtcvETH * mkrprice} MKR"
-            },
-            {
-                "symbol": "MKR-USDC",
-                "symbolName": "MKR-USDC",
-                "usdcPrice": usdcprice,
-                "MKRPrice": mkrprice,
-                "usdcBridgeReservePrice": f"{usdcBridgeReservePrice * mkrprice} MKR",
-                "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
-                "TotalBridgePrice": f"{MKRTBTTCTotalBridgePrice * mkrprice} MKR",
-                "TotalPrice": f"{MKRTBTTCTotalPrice * mkrprice} MKR",
-                "PairVolume": f"{MKRvETH + usdcvETH * mkrprice} MKR"
-            },
-            {
-                "symbol": "MKR-EURC",
-                "symbolName": "MKR-EURC",
-                "EURCPrice": eurcprice,
-                "MKRPrice": mkrprice,
-                "EURCBridgeReservePrice": f"{EURCBridgeReservePrice * mkrprice} MKR",
-                "MKRBridgeReservePrice": f"{MKRBridgeReservePrice * mkrprice} MKR",
-                "TotalBridgePrice": f"{MKREURCTotalBridgePrice * mkrprice} MKR",
-                "TotalPrice": f"{MKREURCTotalPrice * mkrprice} MKR",
-                "PairVolume": f"{MKRvETH + EURCvETH * mkrprice} MKR"
-            },
-        {"Total Bridge Balances": [
-            {"Bridge.vETH": bridgevethbalances},
-            {"PureBasket": purebasketbalances},
-            {"SwitchBasket": switchbasketbalances},
-            {"KaijuBasket": kaijubasketbalances},
-        ]},
-        {"24hr Currency Volume": bridgevolume},
-        ]
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+########################################################################################################################################################################################
+# MARKET ROUTES
+########################################################################################################################################################################################
+@app.get('/market/allTickers')
+def routegetalltickers():
+    baskets = getallbaskets()
+    latestblock = latest_block()
+    volblock = int(latestblock) - 1440
+    timestamp = datetime.now(timezone.utc).isoformat()
+    ticker_info = []
+    for basket in baskets:
+        volume_info = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "VRSC")
+        if volume_info is not None:
+            ticker_info.append({
+                "basket": basket,
+                "volume_info": volume_info
+            })
+    return {"timestamp": timestamp, "ticker_info": ticker_info}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(PORT))
