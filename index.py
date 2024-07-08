@@ -9,6 +9,8 @@ app = FastAPI()
 load_dotenv(find_dotenv())
 RPCURL = os.environ.get("RPCURL")
 PORT = os.environ.get("APIPORT")
+# RPCUSER=
+# RPCPASS=
 
 # Placeholder data
 latestblock = []
@@ -38,6 +40,10 @@ def send_request(method, url, headers, data):
     response = requests.request(method, url, headers=headers, json=data)
     response.raise_for_status()
     return response.json()
+
+# def send_request(method, url, headers, data):
+#     response = requests.request(method, url, headers=headers, json=data, auth=(RPCUSER, RPCPASS))
+#     return response.json()
 
 def get_bridge_currency_bridgeveth():
     requestData = {
@@ -470,6 +476,44 @@ def getpure_supply():
     response = send_request(**requestData)
     return response["result"]["lastconfirmedcurrencystate"]["supply"]
 
+def getcurrencyvolumeinfo(currency, fromblock, endblock, interval, volumecurrency):
+    requestData = {
+        "method": "post",
+        "url": RPCURL,
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrencystate",
+            "params": [currency, f"{fromblock}, {endblock}, {interval}", volumecurrency],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+    try:
+        nresponse = response['result'][1]['conversiondata']
+        new_response = [
+            nresponse['volumecurrency'],
+            nresponse['volumepairs'],
+            nresponse['volumethisinterval']
+        ]
+    except KeyError:
+        new_response = response
+    return new_response
+
+def calculatevolumeinfo():
+    currblock = latest_block()
+    blockint = int(currblock) - 1440
+    bridgevethdata = getcurrencyvolumeinfo("Bridge.vETH", blockint, currblock, 1440, "DAI.vETH")
+    puredata = getcurrencyvolumeinfo("Pure", blockint, currblock, 1440, "VRSC")
+    switchdata = getcurrencyvolumeinfo("Switch", blockint, currblock, 1440, "DAI.vETH")
+    kaijudata = getcurrencyvolumeinfo("Kaiju", blockint, currblock, 1440, "vUSDT.vETH")
+    data = {
+        "Bridge.vETH": bridgevethdata,
+        "Pure": puredata,
+        "Switch": switchdata,
+        "Kaiju": kaijudata
+    }
+    return data
+    
 def getkaiju_supply():
     requestData = {
         "method": "post",
@@ -899,7 +943,7 @@ def latest_block():
     }
     try:
         response = send_request(**requestData)
-        latestblock = response["result"]["blocks"]
+        latestblock = response['result']['blocks']
         return latestblock
     except:
         return "Error!!, success: False"
@@ -1717,15 +1761,8 @@ def routegetbasketsupply():
 
 @app.get('/getcurrencyvolumes')
 def routegetcurrencyvolumes():
-    try:
-        data = load_from_json()
-        jsond = {
-            "data": data,
-            "success": True
-        }
-        return jsond
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    jsond = calculatevolumeinfo()
+    return jsond
 
 @app.get('/market/allTickers/')
 def routegetvrscdai():
