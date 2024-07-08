@@ -5,13 +5,9 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 ## API URL
 ``http://116.203.53.84:5000``
 
-## Information
-
-If you want to fetch the 24 hour data, you can add the base block interval (fromblock) and then increase the current block interval (toblock) by 1440, just add 1440 with the number your going to use for the current block interval and you will get the 24 hour results.
-
 ## Endpoints
 
-- `/ ` Returns the API is running.
+- ```/``` Returns the API is running.
 - ```/price/<ticker>``` Returns the price of VRSC in different currencies and values along with the 24 hour change.
 - ```/difficulty``` Returns the current network difficulty and formats it into readable form.
 - ```/getcurrencystate/<currency>/<height>``` Returns the currency state of bridged coins.
@@ -55,8 +51,12 @@ If you want to fetch the 24 hour data, you can add the base block interval (from
 - ```/getvolume/<currencyid>/<currency>/<fromblk>/<toblk>``` Returns the total reservein and reserveout volumes of a specific currency on the bridge.
 - ```/gettotalvolume/<currency>/<fromblk>/<toblk>``` Returns the total reservein, reserveout, primarycurrencyin, primarycurrencyout and conversionfees of all the currencies present in the basket.
 - ```/gettransactions/<currency>/<fromblk>/<toblk>``` Returns all the transactions of a specific basket in the given block interval.
+- ```/getaddressbalance/<address>``` Returns the balance of the given address.
+- ```/getbasketinfo/``` Returns all the basket currency information.
+- ```/getcurrencyvolumes``` Returns the currencyvolumes as per 24 hours.
+
+## Market Endpoints
+
+```/market/allTickers``` Returns all the basket currencies as pairs with high/low/close volume information as well as the total volume information of each basket in a 24 hour period. Note that this endpoint returns the currency prices in the currency ``VRSC``. Since VRSC is in every basket, it makes more sense to standardize volumes in VRSC and all volumes are aggregated. Any basket with no transactions in 24 hour period will not show up in this API endpoint, if any listing partners want to use USD prices then they can easily convert the prices from VRSC to USD by themselves, as all the currency volume information are given out in Verus! 
 
 More API Endpoints will be added in the future..
-
-## Contributors
-[![](https://avatars.githubusercontent.com/u/148117518?v=4?size=10)](https://github.com/ShreyaPrincess)
