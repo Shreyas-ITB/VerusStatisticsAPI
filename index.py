@@ -1794,42 +1794,63 @@ def routegetalltickers():
     volblock = int(latestblock) - 1440
     timestamp = int(time.time() * 1000)
 
-    ticker_info = []
+    pair_volumes = {}
 
     for basket in baskets:
         volume_info = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "VRSC")
         if volume_info is not None:
-            temp_volumes = {}
-            total_volume = 0
-            
-            # Set to keep track of added pairs
-            added_pairs = set()
-            
             for pair in volume_info:
-                currency_pair = f"{pair['currency']}-{pair['convertto']}"
-                reverse_pair = f"{pair['convertto']}-{pair['currency']}"
-                
-                # Only add the pair if it hasn't been added before
-                if reverse_pair in added_pairs:
-                    total_volume += pair['volume']
+                # Removing ".vETH" suffix from currency names
+                currency = pair['currency'].replace(".vETH", "")
+                convertto = pair['convertto'].replace(".vETH", "")
+                currency_pair = f"{currency}-{convertto}"
+                reverse_pair = f"{convertto}-{currency}"
+
+                if currency_pair not in pair_volumes:
+                    pair_volumes[currency_pair] = {
+                        'currency': currency,
+                        'convertto': convertto,
+                        'volume': pair['volume'],
+                        'close': pair['close'],
+                        'high': pair['high'],
+                        'low': pair['low'],
+                        'open': pair['open']
+                    }
                 else:
-                    total_volume += pair['volume']
-                    added_pairs.add(currency_pair)
+                    pair_volumes[currency_pair]['volume'] += pair['volume']
+                    pair_volumes[currency_pair]['close'] += pair['close']
+                    pair_volumes[currency_pair]['high'] += pair['high']
+                    pair_volumes[currency_pair]['low'] += pair['low']
+                    pair_volumes[currency_pair]['open'] += pair['open']
 
-                temp_volumes[currency_pair] = {
-                    'currency': pair['currency'],
-                    'convertto': pair['convertto'],
-                    'volume': pair['volume'],
-                    'close': pair['close'],
-                    'high': pair['high'],
-                    'low': pair['low'],
-                    'open': pair['open']
-                }
+                if reverse_pair in pair_volumes:
+                    pair_volumes[currency_pair]['volume'] += pair_volumes[reverse_pair]['volume']
+                    pair_volumes[currency_pair]['close'] += pair_volumes[reverse_pair]['close']
+                    pair_volumes[currency_pair]['high'] += pair_volumes[reverse_pair]['high']
+                    pair_volumes[currency_pair]['low'] += pair_volumes[reverse_pair]['low']
+                    pair_volumes[currency_pair]['open'] += pair_volumes[reverse_pair]['open']
+                    del pair_volumes[reverse_pair]
 
-            ticker_info.append({
-                "pairs": list(temp_volumes.values()),
-                "totalvolume": total_volume
-            })
+    ticker_info = []
+    total_volume = 0
+
+    for pair in pair_volumes.values():
+        ticker_info.append({
+            'symbol': f"{pair['currency']}-{pair['convertto']}",
+            'symbolName': f"{pair['currency']}-{pair['convertto']}",
+            'currency': pair['currency'],
+            'convertto': pair['convertto'],
+            'volume': pair['volume'],
+            'close': pair['close'],
+            'high': pair['high'],
+            'low': pair['low'],
+            'open': pair['open']
+        })
+        total_volume += pair['volume']
+
+    ticker_info.append({
+        'totalvolume': total_volume
+    })
 
     return {
         "code": "200000",
