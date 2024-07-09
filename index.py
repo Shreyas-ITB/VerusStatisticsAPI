@@ -1793,7 +1793,7 @@ def routegetalltickers():
     latestblock = latest_block()
     volblock = int(latestblock) - 1440
     timestamp = int(time.time() * 1000)
-    
+
     ticker_info = []
 
     for basket in baskets:
@@ -1802,14 +1802,19 @@ def routegetalltickers():
             temp_volumes = {}
             total_volume = 0
             
+            # Set to keep track of added pairs
+            added_pairs = set()
+            
             for pair in volume_info:
                 currency_pair = f"{pair['currency']}-{pair['convertto']}"
                 reverse_pair = f"{pair['convertto']}-{pair['currency']}"
-
-                if reverse_pair in temp_volumes:
-                    total_volume += pair['volume'] + temp_volumes[reverse_pair]['volume']
+                
+                # Only add the pair if it hasn't been added before
+                if reverse_pair in added_pairs:
+                    total_volume += pair['volume']
                 else:
                     total_volume += pair['volume']
+                    added_pairs.add(currency_pair)
 
                 temp_volumes[currency_pair] = {
                     'currency': pair['currency'],
