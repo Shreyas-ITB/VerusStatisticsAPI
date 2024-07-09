@@ -4,7 +4,7 @@ from dotenv import load_dotenv, find_dotenv
 import json
 from fastapi import FastAPI, HTTPException
 import uvicorn
-from datetime import datetime, timezone
+import time
 
 app = FastAPI()
 load_dotenv(find_dotenv())
@@ -512,13 +512,7 @@ def getcurrencyvolumeinfo(currency, fromblock, endblock, interval, volumecurrenc
     try:
         nresponse = response['result'][1]['conversiondata']
         if all(key in nresponse for key in ["volumecurrency", "volumepairs", "volumethisinterval"]):
-            new_response = [
-                {
-                    "volumecurrency": nresponse['volumecurrency'],
-                    "volumepairs": nresponse['volumepairs'],
-                    "totalvolume": nresponse['volumethisinterval']
-                }
-            ]
+            new_response = nresponse['volumepairs']
         else:
             new_response = None
     except (KeyError, IndexError):
@@ -1798,16 +1792,47 @@ def routegetalltickers():
     baskets = getallbaskets()
     latestblock = latest_block()
     volblock = int(latestblock) - 1440
-    timestamp = datetime.now(timezone.utc).isoformat()
+    timestamp = int(time.time() * 1000)
+    
     ticker_info = []
+
     for basket in baskets:
         volume_info = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "VRSC")
         if volume_info is not None:
+            temp_volumes = {}
+            total_volume = 0
+            
+            for pair in volume_info:
+                currency_pair = f"{pair['currency']}-{pair['convertto']}"
+                reverse_pair = f"{pair['convertto']}-{pair['currency']}"
+
+                if reverse_pair in temp_volumes:
+                    total_volume += pair['volume'] + temp_volumes[reverse_pair]['volume']
+                else:
+                    total_volume += pair['volume']
+
+                temp_volumes[currency_pair] = {
+                    'currency': pair['currency'],
+                    'convertto': pair['convertto'],
+                    'volume': pair['volume'],
+                    'close': pair['close'],
+                    'high': pair['high'],
+                    'low': pair['low'],
+                    'open': pair['open']
+                }
+
             ticker_info.append({
-                "basket": basket,
-                "volume_info": volume_info
+                "pairs": list(temp_volumes.values()),
+                "totalvolume": total_volume
             })
-    return {"timestamp": timestamp, "ticker_info": ticker_info}
+
+    return {
+        "code": "200000",
+        "data": {
+            "time": timestamp,
+            "ticker": ticker_info
+        }
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(PORT))
