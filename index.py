@@ -1787,6 +1787,78 @@ def routegetcurrencyvolumes():
 ########################################################################################################################################################################################
 # MARKET ROUTES
 ########################################################################################################################################################################################
+# @app.get('/market/allTickers')
+# def routegetalltickers():
+#     baskets = getallbaskets()
+#     latestblock = latest_block()
+#     volblock = int(latestblock) - 1440
+#     timestamp = int(time.time() * 1000)
+
+#     pair_volumes = {}
+
+#     for basket in baskets:
+#         volume_info = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "VRSC")
+#         if volume_info is not None:
+#             for pair in volume_info:
+#                 # Removing ".vETH" suffix from currency names
+#                 currency = pair['currency'].replace(".vETH", "")
+#                 convertto = pair['convertto'].replace(".vETH", "")
+#                 currency_pair = f"{currency}-{convertto}"
+#                 reverse_pair = f"{convertto}-{currency}"
+
+#                 if currency_pair not in pair_volumes:
+#                     pair_volumes[currency_pair] = {
+#                         'currency': currency,
+#                         'convertto': convertto,
+#                         'volume': pair['volume'],
+#                         'close': pair['close'],
+#                         'high': pair['high'],
+#                         'low': pair['low'],
+#                         'open': pair['open']
+#                     }
+#                 else:
+#                     pair_volumes[currency_pair]['volume'] += pair['volume']
+#                     pair_volumes[currency_pair]['close'] += pair['close']
+#                     pair_volumes[currency_pair]['high'] += pair['high']
+#                     pair_volumes[currency_pair]['low'] += pair['low']
+#                     pair_volumes[currency_pair]['open'] += pair['open']
+
+#                 if reverse_pair in pair_volumes:
+#                     pair_volumes[currency_pair]['volume'] += pair_volumes[reverse_pair]['volume']
+#                     pair_volumes[currency_pair]['close'] += pair_volumes[reverse_pair]['close']
+#                     pair_volumes[currency_pair]['high'] += pair_volumes[reverse_pair]['high']
+#                     pair_volumes[currency_pair]['low'] += pair_volumes[reverse_pair]['low']
+#                     pair_volumes[currency_pair]['open'] += pair_volumes[reverse_pair]['open']
+#                     del pair_volumes[reverse_pair]
+
+#     ticker_info = []
+#     total_volume = 0
+
+#     for pair in pair_volumes.values():
+#         ticker_info.append({
+#             'symbol': f"{pair['currency']}-{pair['convertto']}",
+#             'symbolName': f"{pair['currency']}-{pair['convertto']}",
+#             # 'currency': pair['currency'],
+#             # 'convertto': pair['convertto'],
+#             'volume': pair['volume'],
+#             'close': pair['close'],
+#             'high': pair['high'],
+#             'low': pair['low'],
+#             'open': pair['open']
+#         })
+#     #     total_volume += pair['volume']
+
+#     # ticker_info.append({
+#     #     'totalvolume': total_volume
+#     # })
+
+#     return {
+#         "code": "200000",
+#         "data": {
+#             "time": timestamp,
+#             "ticker": ticker_info
+#         }
+#     }
 @app.get('/market/allTickers')
 def routegetalltickers():
     baskets = getallbaskets()
@@ -1800,9 +1872,13 @@ def routegetalltickers():
         volume_info = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "VRSC")
         if volume_info is not None:
             for pair in volume_info:
-                # Removing ".vETH" suffix from currency names
-                currency = pair['currency'].replace(".vETH", "")
-                convertto = pair['convertto'].replace(".vETH", "")
+                # Removing ".vETH" suffix and 'v' prefix from currency names
+                currency = pair['currency'].replace(".vETH", "").lstrip('v')
+                convertto = pair['convertto'].replace(".vETH", "").lstrip('v')
+                # Ensure VRSC appears first in the pair
+                if currency == "VRSC" or convertto == "VRSC":
+                    if convertto == "VRSC":
+                        currency, convertto = convertto, currency
                 currency_pair = f"{currency}-{convertto}"
                 reverse_pair = f"{convertto}-{currency}"
 
@@ -1838,27 +1914,23 @@ def routegetalltickers():
         ticker_info.append({
             'symbol': f"{pair['currency']}-{pair['convertto']}",
             'symbolName': f"{pair['currency']}-{pair['convertto']}",
-            'currency': pair['currency'],
-            'convertto': pair['convertto'],
             'volume': pair['volume'],
-            'close': pair['close'],
+            'last': pair['close'],
             'high': pair['high'],
             'low': pair['low'],
             'open': pair['open']
         })
-        total_volume += pair['volume']
-
-    ticker_info.append({
-        'totalvolume': total_volume
-    })
+        #total_volume += pair['volume']
 
     return {
         "code": "200000",
         "data": {
             "time": timestamp,
-            "ticker": ticker_info
+            "ticker": ticker_info,
+            #"totalvolume": total_volume
         }
     }
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(PORT))
