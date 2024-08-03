@@ -5,6 +5,7 @@ import json
 from fastapi import FastAPI, HTTPException
 import uvicorn
 import time
+import numpy as np
 
 app = FastAPI()
 load_dotenv(find_dotenv())
@@ -454,48 +455,6 @@ def diff_format(num):
         num /= 1000.0
     return '{}{}'.format('{:f}'.format(num).rstrip('0').rstrip('.'), ['', ' Thousand', ' Million', ' Billion', ' Trillion'][magnitude])
 
-def getbridgeveth_supply():
-    requestData = {
-        "method": "post",
-        "url": RPCURL,
-        "headers": {"Content-Type": "application/json"},
-        "data": {
-            "method": "getcurrency",
-            "params": ["Bridge.vETH"],
-            "id": 1
-        }
-    }
-    response = send_request(**requestData)
-    return response["result"]["lastconfirmedcurrencystate"]["supply"]
-
-def getswitch_supply():
-    requestData = {
-        "method": "post",
-        "url": RPCURL,
-        "headers": {"Content-Type": "application/json"},
-        "data": {
-            "method": "getcurrency",
-            "params": ["Switch"],
-            "id": 1
-        }
-    }
-    response = send_request(**requestData)
-    return response["result"]["lastconfirmedcurrencystate"]["supply"]
-
-def getpure_supply():
-    requestData = {
-        "method": "post",
-        "url": RPCURL,
-        "headers": {"Content-Type": "application/json"},
-        "data": {
-            "method": "getcurrency",
-            "params": ["Pure"],
-            "id": 1
-        }
-    }
-    response = send_request(**requestData)
-    return response["result"]["lastconfirmedcurrencystate"]["supply"]
-
 def getcurrencyvolumeinfo(currency, fromblock, endblock, interval, volumecurrency):
     requestData = {
         "method": "post",
@@ -522,311 +481,52 @@ def getcurrencyvolumeinfo(currency, fromblock, endblock, interval, volumecurrenc
 def calculatevolumeinfo():
     currblock = latest_block()
     blockint = int(currblock) - 1440
-    bridgevethdata = getcurrencyvolumeinfo("Bridge.vETH", blockint, currblock, 1440, "DAI.vETH")
-    puredata = getcurrencyvolumeinfo("Pure", blockint, currblock, 1440, "VRSC")
-    switchdata = getcurrencyvolumeinfo("Switch", blockint, currblock, 1440, "DAI.vETH")
-    kaijudata = getcurrencyvolumeinfo("Kaiju", blockint, currblock, 1440, "vUSDT.vETH")
-    data = {
-        "Bridge.vETH": bridgevethdata,
-        "Pure": puredata,
-        "Switch": switchdata,
-        "Kaiju": kaijudata
-    }
+    baskets = getallbaskets()
+    
+    data = {}
+    for basket in baskets:
+        volume_info = getcurrencyvolumeinfo(basket, blockint, currblock, 1440, "VRSC")
+        data[basket] = volume_info
+
     return data
     
-def getkaiju_supply():
-    requestData = {
-        "method": "post",
-        "url": RPCURL,
-        "headers": {"Content-Type": "application/json"},
-        "data": {
-            "method": "getcurrency",
-            "params": ["Kaiju"],
-            "id": 1
-        }
-    }
-    response = send_request(**requestData)
-    return response["result"]["lastconfirmedcurrencystate"]["supply"]
-
-def get_currencyconverters_pure():
-    networkblocks = latest_block()
-    reserves = dai_reserves()
-    resp = get_reserve_dai_price(reserves)
-    supply = getpure_supply()
+def getvrscreserves_frombaskets(basket):
     requestData = {
         "method": "post",
         "url": "https://rpc.vrsc.komodefi.com/",
         "headers": {"Content-Type": "application/json"},
         "data": {
             "method": "getcurrencyconverters",
-            "params": ["Pure"],
+            "params": [f"{basket}"],
             "id": 1
         }
     }
     response = send_request(**requestData)
-
-    # Assuming the JSON data is in response['result']
     data = response.get('result')
-
-    # Initialize variables to hold the sums
     total_initialsupply = 0
     total_startblock = 0
     total_reservein = 0
     total_reserveout = 0
     reserves = []
     priceinreserve = []
-
-    # Accessing specific elements and summing them
-    for item in data:
-        currency_info = item.get('iHax5qYQGbcMGqJKKrPorpzUBX2oFFXGnY')
-        last_notarization = item.get('lastnotarization')
-
-        if currency_info:
-            total_initialsupply += currency_info.get('initialsupply', 0)
-            total_startblock += currency_info.get('startblock', 0)
-
-        if last_notarization:
-            currencystate = last_notarization.get('currencystate', {})
-            currencies = currencystate.get('currencies', {})
-
-            for key, value in currencies.items():
-                total_reservein += value.get('reservein', 0)
-                total_reserveout += value.get('reserveout', 0)
-
-            reservecurrencies = currencystate.get('reservecurrencies', [])
-            for rc in reservecurrencies:
-                reserves.append(rc.get('reserves', 0))
-                priceinreserve.append(rc.get('priceinreserve', 0))
-
-    # Calculate the total volume
-    volume = total_reservein + total_reserveout
-
-    # Return the extracted values along with the volume
-    return {
-        "bridge": "Pure",
-        "initialsupply": total_initialsupply,
-        "supply": supply,
-        "startblock": total_startblock,
-        "block": networkblocks,
-        "blk_volume": volume,
-        "vrsc_reserves": reserves[0] * resp,
-        "vrsc_price_in_reserves": priceinreserve[0] * resp, 
-        "tbtc_reserves": reserves[1] * resp,
-        "tbtc_price_in_reserves": priceinreserve[1] * resp,
-    }
-
-def get_currencyconverters_bridgeveth():
-    networkblocks = latest_block()
-    reserves = dai_reserves()
-    resp = get_reserve_dai_price(reserves)
-    supply = getbridgeveth_supply()
-    requestData = {
-        "method": "post",
-        "url": "https://rpc.vrsc.komodefi.com/",
-        "headers": {"Content-Type": "application/json"},
-        "data": {
-            "method": "getcurrencyconverters",
-            "params": ["Bridge.veth"],
-            "id": 1
-        }
-    }
-    response = send_request(**requestData)
-
-    # Assuming the JSON data is in response['result']
-    data = response.get('result')
-
-    # Initialize variables to hold the sums
-    total_initialsupply = 0
-    total_startblock = 0
-    total_reservein = 0
-    total_reserveout = 0
-    reserves = []
-    priceinreserve = []
-
-    # Accessing specific elements and summing them
     for item in data:
         currency_info = item.get('i3f7tSctFkiPpiedY8QR5Tep9p4qDVebDx')
         last_notarization = item.get('lastnotarization')
-
         if currency_info:
             total_initialsupply += currency_info.get('initialsupply', 0)
             total_startblock += currency_info.get('startblock', 0)
-
         if last_notarization:
             currencystate = last_notarization.get('currencystate', {})
             currencies = currencystate.get('currencies', {})
-
             for key, value in currencies.items():
                 total_reservein += value.get('reservein', 0)
                 total_reserveout += value.get('reserveout', 0)
-
             reservecurrencies = currencystate.get('reservecurrencies', [])
             for rc in reservecurrencies:
                 reserves.append(rc.get('reserves', 0))
                 priceinreserve.append(rc.get('priceinreserve', 0))
-
-    # Calculate the total volume
     volume = total_reservein + total_reserveout
-
-    # Return the extracted values along with the volume
-    return {
-        "bridge": "Bridge.veth",
-        "initialsupply": total_initialsupply,
-        "supply": supply,
-        "startblock": total_startblock,
-        "block": networkblocks,
-        "blk_volume": volume,
-        "vrsc_reserves": reserves[0] * resp,
-        "vrsc_price_in_reserves": priceinreserve[0] * resp, 
-        "dai_reserves": reserves[1] * resp,
-        "dai_price_in_reserves": priceinreserve[1] * resp,
-        "mkr_reserves": reserves[2] * resp,
-        "mkr_price_in_reserves": priceinreserve[2] * resp,
-        "eth_reserves": reserves[3] * resp,
-        "eth_price_in_reserves": priceinreserve[3] * resp,
-    }
-
-def get_currencyconverters_switch():
-    networkblocks = latest_block()
-    reserves = dai_reserves()
-    resp = get_reserve_dai_price(reserves)
-    supply = getswitch_supply()
-    requestData = {
-        "method": "post",
-        "url": "https://rpc.vrsc.komodefi.com/",
-        "headers": {"Content-Type": "application/json"},
-        "data": {
-            "method": "getcurrencyconverters",
-            "params": ["Switch"],
-            "id": 1
-        }
-    }
-    response = send_request(**requestData)
-
-    # Assuming the JSON data is in response['result']
-    data = response.get('result')
-
-    # Initialize variables to hold the sums
-    total_initialsupply = 0
-    total_startblock = 0
-    total_reservein = 0
-    total_reserveout = 0
-    reserves = []
-    priceinreserve = []
-
-    # Accessing specific elements and summing them
-    for item in data:
-        currency_info = item.get('i4Xr5TAMrDTD99H69EemhjDxJ4ktNskUtc')
-        last_notarization = item.get('lastnotarization')
-
-        if currency_info:
-            total_initialsupply += currency_info.get('initialsupply', 0)
-            total_startblock += currency_info.get('startblock', 0)
-
-        if last_notarization:
-            currencystate = last_notarization.get('currencystate', {})
-            currencies = currencystate.get('currencies', {})
-
-            for key, value in currencies.items():
-                total_reservein += value.get('reservein', 0)
-                total_reserveout += value.get('reserveout', 0)
-
-            reservecurrencies = currencystate.get('reservecurrencies', [])
-            for rc in reservecurrencies:
-                reserves.append(rc.get('reserves', 0))
-                priceinreserve.append(rc.get('priceinreserve', 0))
-
-    # Calculate the total volume
-    volume = total_reservein + total_reserveout
-
-    # Return the extracted values along with the volume
-    return {
-        "bridge": "Switch",
-        "initialsupply": total_initialsupply,
-        "supply": supply,
-        "startblock": total_startblock,
-        "block": networkblocks,
-        "blk_volume": volume,
-        "vrsc_reserves": reserves[0] * resp,
-        "vrsc_price_in_reserves": priceinreserve[0] * resp, 
-        "dai_reserves": reserves[1] * resp,
-        "dai_price_in_reserves": priceinreserve[1] * resp,
-        "usdc_reserves": reserves[2] * resp,
-        "usdc_price_in_reserves": priceinreserve[2] * resp,
-        "eurc_reserves": reserves[3] * resp,
-        "eurc_price_in_reserves": priceinreserve[3] * resp,
-    }
-
-def get_currencyconverters_kaiju():
-    networkblocks = latest_block()
-    reserves = dai_reserves()
-    resp = get_reserve_dai_price(reserves)
-    supply = getkaiju_supply()
-    requestData = {
-        "method": "post",
-        "url": "https://rpc.vrsc.komodefi.com/",
-        "headers": {"Content-Type": "application/json"},
-        "data": {
-            "method": "getcurrencyconverters",
-            "params": ["Kaiju"],
-            "id": 1
-        }
-    }
-    response = send_request(**requestData)
-
-    # Assuming the JSON data is in response['result']
-    data = response.get('result')
-
-    # Initialize variables to hold the sums
-    total_initialsupply = 0
-    total_startblock = 0
-    total_reservein = 0
-    total_reserveout = 0
-    reserves = []
-    priceinreserve = []
-
-    # Accessing specific elements and summing them
-    for item in data:
-        currency_info = item.get('i9kVWKU2VwARALpbXn4RS9zvrhvNRaUibb')
-        last_notarization = item.get('lastnotarization')
-
-        if currency_info:
-            total_initialsupply += currency_info.get('initialsupply', 0)
-            total_startblock += currency_info.get('startblock', 0)
-
-        if last_notarization:
-            currencystate = last_notarization.get('currencystate', {})
-            currencies = currencystate.get('currencies', {})
-
-            for key, value in currencies.items():
-                total_reservein += value.get('reservein', 0)
-                total_reserveout += value.get('reserveout', 0)
-
-            reservecurrencies = currencystate.get('reservecurrencies', [])
-            for rc in reservecurrencies:
-                reserves.append(rc.get('reserves', 0))
-                priceinreserve.append(rc.get('priceinreserve', 0))
-
-    # Calculate the total volume
-    volume = total_reservein + total_reserveout
-
-    # Return the extracted values along with the volume
-    return {
-        "bridge": "Kaiju",
-        "initialsupply": total_initialsupply,
-        "supply": supply,
-        "startblock": total_startblock,
-        "block": networkblocks,
-        "blk_volume": volume,
-        "vrsc_reserves": reserves[0] * resp,
-        "vrsc_price_in_reserves": priceinreserve[0] * resp, 
-        "usdt_reserves": reserves[1] * resp,
-        "usdt_price_in_reserves": priceinreserve[1] * resp,
-        "eth_reserves": reserves[2] * resp,
-        "eth_price_in_reserves": priceinreserve[2] * resp,
-        "tbtc_reserves": reserves[3] * resp,
-        "tbtc_price_in_reserves": priceinreserve[3] * resp,
-    }
+    return reserves[0]
 
 def formatHashrate(hashrate):
     if hashrate < 1000:
@@ -975,6 +675,100 @@ def load_from_json():
     except FileNotFoundError:
         print("Temporary JSON file not found.")
         return None
+    
+def get_basket_supply(basket_name):
+    requestData = {
+        "method": "post",
+        "url": RPCURL,
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrency",
+            "params": [basket_name],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+    return response["result"]["lastconfirmedcurrencystate"]["supply"]
+
+def extract_i_address(data):
+    for item in data:
+        for key in item.keys():
+            if key.startswith('i'):
+                return key
+    return None
+
+def get_currencyconverters(basket_name):
+    networkblocks = latest_block()
+    reserves = dai_reserves()
+    resp = get_reserve_dai_price(reserves)
+    supply = get_basket_supply(basket_name)
+
+    requestData = {
+        "method": "post",
+        "url": "https://rpc.vrsc.komodefi.com/",
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrencyconverters",
+            "params": [basket_name],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+
+    data = response.get('result')
+    if not data:
+        return None
+
+    i_address = extract_i_address(data)
+    if not i_address:
+        return None
+
+    total_initialsupply = 0
+    total_startblock = 0
+    total_reservein = 0
+    total_reserveout = 0
+    reserves = []
+    priceinreserve = []
+
+    for item in data:
+        currency_info = item.get(i_address)
+        last_notarization = item.get('lastnotarization')
+
+        if currency_info:
+            total_initialsupply += currency_info.get('initialsupply', 0)
+            total_startblock += currency_info.get('startblock', 0)
+
+        if last_notarization:
+            currencystate = last_notarization.get('currencystate', {})
+            currencies = currencystate.get('currencies', {})
+
+            for key, value in currencies.items():
+                total_reservein += value.get('reservein', 0)
+                total_reserveout += value.get('reserveout', 0)
+
+            reservecurrencies = currencystate.get('reservecurrencies', [])
+            for rc in reservecurrencies:
+                reserves.append(rc.get('reserves', 0))
+                priceinreserve.append(rc.get('priceinreserve', 0))
+
+    volume = total_reservein + total_reserveout
+
+    # Creating the output dictionary
+    output = {
+        "bridge": basket_name,
+        "initialsupply": total_initialsupply,
+        "supply": supply,
+        "startblock": total_startblock,
+        "block": networkblocks,
+        "blk_volume": volume,
+    }
+
+    # Adding reserve and price information to the output
+    for i in range(len(reserves)):
+        output[f"reserves_{i}"] = reserves[i] * resp
+        output[f"price_in_reserves_{i}"] = priceinreserve[i] * resp
+
+    return output
 
 @app.get("/")
 def main():    
@@ -1759,22 +1553,19 @@ def routegetaddressbalance(address: str):
 @app.get('/getbasketinfo/')
 def routegetbasketsupply():
     try:
-        bridgevethbasket = get_currencyconverters_bridgeveth()
-        purebasket = get_currencyconverters_pure()
-        switchbasket = get_currencyconverters_switch()
-        kaijubasket = get_currencyconverters_kaiju()
+        baskets = getallbaskets()
+        data = []
+        for basket in baskets:
+            basket_info = get_currencyconverters(basket)
+            if basket_info:
+                data.append(basket_info)
+
         varrr_blkheight = getvarrrblocks()
-        data = [
-            bridgevethbasket,
-            purebasket,
-            switchbasket,
-            kaijubasket,
-            {
-                "basket": "bridge.varrr",
-                "height": int(varrr_blkheight),
-                "supply": 74853.99232919
-            }
-        ]
+        data.append({
+            "basket": "bridge.varrr",
+            "height": int(varrr_blkheight),
+            "supply": 74853.99232919
+        })
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -1787,150 +1578,99 @@ def routegetcurrencyvolumes():
 ########################################################################################################################################################################################
 # MARKET ROUTES
 ########################################################################################################################################################################################
-# @app.get('/market/allTickers')
-# def routegetalltickers():
-#     baskets = getallbaskets()
-#     latestblock = latest_block()
-#     volblock = int(latestblock) - 1440
-#     timestamp = int(time.time() * 1000)
 
-#     pair_volumes = {}
-
-#     for basket in baskets:
-#         volume_info = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "VRSC")
-#         if volume_info is not None:
-#             for pair in volume_info:
-#                 # Removing ".vETH" suffix from currency names
-#                 currency = pair['currency'].replace(".vETH", "")
-#                 convertto = pair['convertto'].replace(".vETH", "")
-#                 currency_pair = f"{currency}-{convertto}"
-#                 reverse_pair = f"{convertto}-{currency}"
-
-#                 if currency_pair not in pair_volumes:
-#                     pair_volumes[currency_pair] = {
-#                         'currency': currency,
-#                         'convertto': convertto,
-#                         'volume': pair['volume'],
-#                         'close': pair['close'],
-#                         'high': pair['high'],
-#                         'low': pair['low'],
-#                         'open': pair['open']
-#                     }
-#                 else:
-#                     pair_volumes[currency_pair]['volume'] += pair['volume']
-#                     pair_volumes[currency_pair]['close'] += pair['close']
-#                     pair_volumes[currency_pair]['high'] += pair['high']
-#                     pair_volumes[currency_pair]['low'] += pair['low']
-#                     pair_volumes[currency_pair]['open'] += pair['open']
-
-#                 if reverse_pair in pair_volumes:
-#                     pair_volumes[currency_pair]['volume'] += pair_volumes[reverse_pair]['volume']
-#                     pair_volumes[currency_pair]['close'] += pair_volumes[reverse_pair]['close']
-#                     pair_volumes[currency_pair]['high'] += pair_volumes[reverse_pair]['high']
-#                     pair_volumes[currency_pair]['low'] += pair_volumes[reverse_pair]['low']
-#                     pair_volumes[currency_pair]['open'] += pair_volumes[reverse_pair]['open']
-#                     del pair_volumes[reverse_pair]
-
-#     ticker_info = []
-#     total_volume = 0
-
-#     for pair in pair_volumes.values():
-#         ticker_info.append({
-#             'symbol': f"{pair['currency']}-{pair['convertto']}",
-#             'symbolName': f"{pair['currency']}-{pair['convertto']}",
-#             # 'currency': pair['currency'],
-#             # 'convertto': pair['convertto'],
-#             'volume': pair['volume'],
-#             'close': pair['close'],
-#             'high': pair['high'],
-#             'low': pair['low'],
-#             'open': pair['open']
-#         })
-#     #     total_volume += pair['volume']
-
-#     # ticker_info.append({
-#     #     'totalvolume': total_volume
-#     # })
-
-#     return {
-#         "code": "200000",
-#         "data": {
-#             "time": timestamp,
-#             "ticker": ticker_info
-#         }
-#     }
 @app.get('/market/allTickers')
 def routegetalltickers():
     baskets = getallbaskets()
     latestblock = latest_block()
     volblock = int(latestblock) - 1440
     timestamp = int(time.time() * 1000)
-
-    pair_volumes = {}
+    ticker_info = []
 
     for basket in baskets:
         volume_info = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "VRSC")
+        getvrscweightsfrombaskets = getvrscreserves_frombaskets(basket)
+        weightedreserves = np.array(getvrscweightsfrombaskets)
+
         if volume_info is not None:
             for pair in volume_info:
-                # Removing ".vETH" suffix and 'v' prefix from currency names
+                # Remove .vETH suffix and 'v' prefix from currency names
                 currency = pair['currency'].replace(".vETH", "").lstrip('v')
                 convertto = pair['convertto'].replace(".vETH", "").lstrip('v')
-                # Ensure VRSC appears first in the pair
+
                 if currency == "VRSC" or convertto == "VRSC":
+                    currency_pair = f"{currency}-{convertto}"
+
+                    # Calculate weights based on volume
+                    weights = pair['volume'] / np.sum(pair['volume'])
+
+                    # Invert values if VRSC is the quote currency (second position)
                     if convertto == "VRSC":
-                        currency, convertto = convertto, currency
-                currency_pair = f"{currency}-{convertto}"
-                reverse_pair = f"{convertto}-{currency}"
+                        volume = pair['volume'] * 2
+                        last = np.dot(weights, 1 / pair['close']) / np.sum(weights)
+                        high = np.dot(weights, 1 / pair['high']) / np.sum(weights)
+                        low = np.dot(weights, 1 / pair['low']) / np.sum(weights)
+                        openn = np.dot(weights, 1 / pair['open']) / np.sum(weights)
+                    else:
+                        volume = pair['volume']
+                        last = np.dot(weights, pair['close']) / np.sum(weights)
+                        high = np.dot(weights, pair['high']) / np.sum(weights)
+                        low = np.dot(weights, pair['low']) / np.sum(weights)
+                        openn = np.dot(weights, pair['open']) / np.sum(weights)
 
-                if currency_pair not in pair_volumes:
-                    pair_volumes[currency_pair] = {
-                        'currency': currency,
-                        'convertto': convertto,
-                        'volume': pair['volume'],
-                        'close': pair['close'],
-                        'high': pair['high'],
-                        'low': pair['low'],
-                        'open': pair['open']
-                    }
-                else:
-                    pair_volumes[currency_pair]['volume'] += pair['volume']
-                    pair_volumes[currency_pair]['close'] += pair['close']
-                    pair_volumes[currency_pair]['high'] += pair['high']
-                    pair_volumes[currency_pair]['low'] += pair['low']
-                    pair_volumes[currency_pair]['open'] += pair['open']
+                    ticker_info.append({
+                        'symbol': currency_pair,
+                        'symbolName': currency_pair,
+                        'volume': volume,
+                        'last': last,
+                        'high': high,
+                        'low': low,
+                        'open': openn
+                    })
 
-                if reverse_pair in pair_volumes:
-                    pair_volumes[currency_pair]['volume'] += pair_volumes[reverse_pair]['volume']
-                    pair_volumes[currency_pair]['close'] += pair_volumes[reverse_pair]['close']
-                    pair_volumes[currency_pair]['high'] += pair_volumes[reverse_pair]['high']
-                    pair_volumes[currency_pair]['low'] += pair_volumes[reverse_pair]['low']
-                    pair_volumes[currency_pair]['open'] += pair_volumes[reverse_pair]['open']
-                    del pair_volumes[reverse_pair]
+    # Combine reverse pairs
+    combined_ticker_info = {}
+    for ticker in ticker_info:
+        symbol = ticker['symbol']
+        reverse_symbol = "-".join(symbol.split("-")[::-1])
 
-    ticker_info = []
-    total_volume = 0
+        if symbol in combined_ticker_info:
+            combined_volume = combined_ticker_info[symbol]['volume'] + ticker['volume']
+            combined_weights = np.array([combined_ticker_info[symbol]['volume'], ticker['volume']]) / combined_volume
+            combined_ticker_info[symbol]['volume'] = combined_volume
+            combined_ticker_info[symbol]['last'] = np.dot(
+                [combined_ticker_info[symbol]['last'], ticker['last']], combined_weights)
+            combined_ticker_info[symbol]['high'] = np.dot(
+                [combined_ticker_info[symbol]['high'], ticker['high']], combined_weights)
+            combined_ticker_info[symbol]['low'] = np.dot(
+                [combined_ticker_info[symbol]['low'], ticker['low']], combined_weights)
+            combined_ticker_info[symbol]['open'] = np.dot(
+                [combined_ticker_info[symbol]['open'], ticker['open']], combined_weights)
+        elif reverse_symbol in combined_ticker_info:
+            combined_volume = combined_ticker_info[reverse_symbol]['volume'] + ticker['volume']
+            combined_weights = np.array([combined_ticker_info[reverse_symbol]['volume'], ticker['volume']]) / combined_volume
+            combined_ticker_info[reverse_symbol]['volume'] = combined_volume
+            combined_ticker_info[reverse_symbol]['last'] = np.dot(
+                [combined_ticker_info[reverse_symbol]['last'], ticker['last']], combined_weights)
+            combined_ticker_info[reverse_symbol]['high'] = np.dot(
+                [combined_ticker_info[reverse_symbol]['high'], ticker['low']], combined_weights)
+            combined_ticker_info[reverse_symbol]['low'] = np.dot(
+                [combined_ticker_info[reverse_symbol]['low'], ticker['high']], combined_weights)
+            combined_ticker_info[reverse_symbol]['open'] = np.dot(
+                [combined_ticker_info[reverse_symbol]['open'], ticker['open']], combined_weights)
+        else:
+            combined_ticker_info[symbol] = ticker
 
-    for pair in pair_volumes.values():
-        ticker_info.append({
-            'symbol': f"{pair['currency']}-{pair['convertto']}",
-            'symbolName': f"{pair['currency']}-{pair['convertto']}",
-            'volume': pair['volume'],
-            'last': pair['close'],
-            'high': pair['high'],
-            'low': pair['low'],
-            'open': pair['open']
-        })
-        #total_volume += pair['volume']
+    # Convert combined ticker info to list
+    final_ticker_info = list(combined_ticker_info.values())
 
     return {
         "code": "200000",
         "data": {
             "time": timestamp,
-            "ticker": ticker_info,
-            #"totalvolume": total_volume
+            "ticker": final_ticker_info
         }
     }
-
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(PORT))
