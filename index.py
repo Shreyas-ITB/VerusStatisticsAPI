@@ -1595,11 +1595,19 @@ def routegetalltickers():
         if volume_info is not None:
             for pair in volume_info:
                 # Remove .vETH suffix and 'v' prefix from currency names
-                currency = pair['currency'].replace(".vETH", "").lstrip('v')
-                convertto = pair['convertto'].replace(".vETH", "").lstrip('v')
+                if pair['currency'] == "Bridge.vETH" or pair['convertto'] == "Bridge.vETH":
+                    currency = pair['currency']
+                    convertto = pair['convertto']
+                else:
+                    currency = pair['currency'].replace(".vETH", "").lstrip('v')
+                    convertto = pair['convertto'].replace(".vETH", "").lstrip('v')
 
                 if currency == "VRSC" or convertto == "VRSC":
-                    currency_pair = f"{currency}-{convertto}"
+                    # If the pair involves Bridge.vETH, ensure VRSC is first
+                    if currency == "Bridge.vETH" or convertto == "Bridge.vETH":
+                        currency_pair = f"VRSC-Bridge.vETH" if currency == "Bridge.vETH" else f"VRSC-{convertto}"
+                    else:
+                        currency_pair = f"{currency}-{convertto}"
 
                     # Calculate weights based on volume
                     weights = pair['volume'] / np.sum(pair['volume'])
