@@ -6,11 +6,16 @@ from fastapi import FastAPI, HTTPException
 import uvicorn
 import time
 import numpy as np
+from web3 import Web3
+import yfinance as yf
+from decimal import Decimal
 
 app = FastAPI()
 load_dotenv(find_dotenv())
 RPCURL = os.environ.get("RPCURL")
 PORT = os.environ.get("APIPORT")
+ETHERSCANAPI = os.environ.get("ETHERSCANAPIKEY")
+INFURAURL = os.environ.get("INFURAURL")
 # RPCUSER=
 # RPCPASS=
 
@@ -36,6 +41,19 @@ arr_currencies = [
     {"currencyid": "i3f7tSctFkiPpiedY8QR5Tep9p4qDVebDx", "ticker": "Bridge.vETH" },
     {"currencyid": "i4Xr5TAMrDTD99H69EemhjDxJ4ktNskUtc", "ticker": "Switch" },
     {"currencyid": "i9kVWKU2VwARALpbXn4RS9zvrhvNRaUibb", "ticker": "Kaiju"}
+]
+
+arr_token_contracts = {
+    "0x18084fbA666a33d37592fA2633fD49a74DD93a88": 18,  # tBTC
+    "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2": 18,  # MKR
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7": 6,   # USDT
+    "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c": 6,   # EURC
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": 6    # USDC
+}
+
+arr_token_holders = [
+    "0x71518580f36FeCEFfE0721F06bA4703218cD7F63",
+    "0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7"
 ]
 
 def send_request(method, url, headers, data):
@@ -65,6 +83,58 @@ def getallbaskets():
     else:
         print("Unexpected response format")
         return []
+
+def get_pie_value():
+    web3 = Web3(Web3.HTTPProvider(INFURAURL))
+    function_signature = web3.keccak(text='pie(address)').hex()[:10]
+    encoded_query_address = web3.to_hex(web3.to_bytes(hexstr=arr_token_holders[0]))[2:].zfill(64)
+    data = function_signature + encoded_query_address
+    url = f'https://api.etherscan.io/api?module=proxy&action=eth_call&to={arr_token_holders[1]}&data={data}&apikey={ETHERSCANAPI}'
+    response = requests.get(url).json()
+    wei_value = int(response['result'], 16)
+    ether_value = web3.from_wei(wei_value, 'ether')
+    return ether_value
+
+def get_eth_balance(address):
+    url = f'https://api.etherscan.io/api?module=account&action=balance&address={address}&tag=latest&apikey={ETHERSCANAPI}'
+    response = requests.get(url).json()
+    return Decimal(response['result']) / (10 ** 18)  # Convert wei to ether
+
+def get_token_balance(token_contract, decimals):
+    url = f'https://api.etherscan.io/api?module=account&action=tokenbalance&contractaddress={token_contract}&address={arr_token_holders[0]}&tag=latest&apikey={ETHERSCANAPI}'
+    response = requests.get(url).json()
+    balance = Decimal(response['result']) / (10 ** decimals)
+    return balance
+
+def get_token_price(token_contract, retries=5, delay=1):
+    url = f'https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses={token_contract}&vs_currencies=usd'
+    for attempt in range(retries):
+        try:
+            response = requests.get(url).json()
+            return Decimal(response[token_contract.lower()]['usd'])
+        except KeyError:
+            if attempt < retries - 1:
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff
+            else:
+                raise
+        except requests.exceptions.RequestException as e:
+            if attempt < retries - 1:
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff
+            else:
+                print(f"Request failed: {e}")
+                raise
+
+def get_dai_price():
+    dai = yf.Ticker("DAI-USD")
+    data = dai.history(period="1d")
+    return Decimal(data['Close'].iloc[-1])
+
+def get_eth_price():
+    eth = yf.Ticker("ETH-USD")
+    data = eth.history(period="1d")
+    return Decimal(data['Close'].iloc[-1])
 
 def get_bridge_currency_bridgeveth():
     requestData = {
@@ -763,8 +833,10 @@ def get_currencyconverters(basket_name):
         "blk_volume": volume,
     }
 
-    # Adding reserve and price information to the output
+    # Adding reserve and price information to the output, with filtering for specific basket
     for i in range(len(reserves)):
+        if basket_name == "Bridge.vETH" and i >= 4:
+            continue
         output[f"reserves_{i}"] = reserves[i] * resp
         output[f"price_in_reserves_{i}"] = priceinreserve[i] * resp
 
@@ -1559,13 +1631,6 @@ def routegetbasketsupply():
             basket_info = get_currencyconverters(basket)
             if basket_info:
                 data.append(basket_info)
-
-        varrr_blkheight = getvarrrblocks()
-        data.append({
-            "basket": "bridge.varrr",
-            "height": int(varrr_blkheight),
-            "supply": 74853.99232919
-        })
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -1679,6 +1744,49 @@ def routegetalltickers():
             "ticker": final_ticker_info
         }
     }
+
+@app.get('/gettvl')
+def gettvl():
+    try:
+        dai_price = get_dai_price()
+        pie_value = get_pie_value()
+        dai_usd_value = pie_value * dai_price
+
+        eth_price = get_eth_price()
+        eth_balance = get_eth_balance(arr_token_holders[0])
+
+        token_balances = {}
+        network_tvl = dai_usd_value + (eth_balance * eth_price)
+
+        for token_contract, decimals in arr_token_contracts.items():
+            balance = get_token_balance(token_contract, decimals)
+            price = get_token_price(token_contract)
+            usd_value = balance * price
+            token_balances[token_contract] = {
+                'balance': '{:.10f}'.format(balance),
+                'usd_value': '{:.8f}'.format(usd_value)
+            }
+            network_tvl += usd_value
+
+        token_balances['Network_TVL'] = '{:.8f}'.format(network_tvl)
+
+        return {
+            "code": "200000",
+            "data": {
+                "result": token_balances
+            }
+        }
+    except HTTPException as e:
+        return {
+            "code": "500000",
+            "message": e.detail
+        }
+    except Exception as e:
+        return {
+            "code": "500000",
+            "message": f"An unexpected error occurred: {str(e)}"
+        }
+    
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(PORT))
