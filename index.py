@@ -1745,9 +1745,70 @@ def routegetalltickers():
         }
     }
 
+# @app.get('/gettvl')
+# def gettvl():
+#     try:
+#         baskets = getallbaskets()
+#         data = []
+#         for basket in baskets:
+#             basket_info = get_currencyconverters(basket)
+#             if basket_info:
+#                 data.append(basket_info)
+#         dai_price = get_dai_price()
+#         pie_value = get_pie_value()
+#         dai_usd_value = pie_value * dai_price
+
+#         eth_price = get_eth_price()
+#         eth_balance = get_eth_balance(arr_token_holders[0])
+
+#         token_balances = {}
+#         network_tvl = dai_usd_value + (eth_balance * eth_price)
+
+#         for token_contract, decimals in arr_token_contracts.items():
+#             balance = get_token_balance(token_contract, decimals)
+#             price = get_token_price(token_contract)
+#             usd_value = balance * price
+#             token_balances[token_contract] = {
+#                 'balance': '{:.10f}'.format(balance),
+#                 'usd_value': '{:.8f}'.format(usd_value)
+#             }
+#             network_tvl += usd_value
+
+#         token_balances['Network_TVL'] = '{:.8f}'.format(network_tvl)
+
+#         return {
+#             "code": "200000",
+#             "data": {
+#                 "result": token_balances
+#             }
+#         }
+#     except HTTPException as e:
+#         return {
+#             "code": "500000",
+#             "message": e.detail
+#         }
+#     except Exception as e:
+#         return {
+#             "code": "500000",
+#             "message": f"An unexpected error occurred: {str(e)}"
+#         }
+
+def get_verus_coin_price():
+    # Get Verus Coin price from Yahoo Finance
+    verus = yf.Ticker("VRSC-USD")  # Replace with correct symbol if needed
+    return Decimal(verus.history(period="1d")["Close"].iloc[-1])
+
 @app.get('/gettvl')
 def gettvl():
     try:
+        baskets = getallbaskets()
+        data = []
+        for basket in baskets:
+            basket_info = get_currencyconverters(basket)
+            if basket_info:
+                data.append(basket_info)
+        
+        # Get prices and balances
         dai_price = get_dai_price()
         pie_value = get_pie_value()
         dai_usd_value = pie_value * dai_price
@@ -1755,9 +1816,13 @@ def gettvl():
         eth_price = get_eth_price()
         eth_balance = get_eth_balance(arr_token_holders[0])
 
+        # Get Verus Coin price
+        verus_price = get_verus_coin_price()  # Assumed to be returning Decimal
+
         token_balances = {}
         network_tvl = dai_usd_value + (eth_balance * eth_price)
 
+        # Calculate token balances and their USD values
         for token_contract, decimals in arr_token_contracts.items():
             balance = get_token_balance(token_contract, decimals)
             price = get_token_price(token_contract)
@@ -1768,6 +1833,25 @@ def gettvl():
             }
             network_tvl += usd_value
 
+        # Extract reserves_0 values and calculate
+        reserves_0_total = Decimal('0')
+        for basket in data:
+            basket_name = basket["bridge"]
+            reserves_0 = Decimal(basket.get("reserves_0", 0))  # Default to 0 if key is not present
+            reserves_0_usd_value = reserves_0 * verus_price
+            reserves_0_total += reserves_0_usd_value
+            token_balances[basket_name] = {
+                'VRSC_reserves': '{:.10f}'.format(reserves_0),
+                'usd_value': '{:.8f}'.format(reserves_0_usd_value)
+            }
+
+        network_tvl += reserves_0_total
+
+        # Add ETH and DAI details
+        token_balances['DAI_Price'] = '{:.8f}'.format(dai_price)
+        token_balances['DAI_Balance'] = '{:.8f}'.format(pie_value)
+        token_balances['ETH_Price'] = '{:.8f}'.format(eth_price)
+        token_balances['ETH_Balance'] = '{:.8f}'.format(eth_balance)
         token_balances['Network_TVL'] = '{:.8f}'.format(network_tvl)
 
         return {
@@ -1787,6 +1871,5 @@ def gettvl():
             "message": f"An unexpected error occurred: {str(e)}"
         }
     
-
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(PORT))
