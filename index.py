@@ -1057,7 +1057,7 @@ def getdefichain(basket):
         formatted_basket = {
             "liquiditypool": basket['fullyqualifiedname'],
             "lp_address": basket['i_address'],
-            "fees": basket['fees'],  # Add fees to the formatted_basket
+            #"fees": basket['fees'],  # Add fees to the formatted_basket
             "lp_volume": volume_info.get(basket['fullyqualifiedname'], None),  # Include volume in the formatted basket
             "tokens": []
         }
