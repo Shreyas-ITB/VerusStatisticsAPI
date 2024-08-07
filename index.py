@@ -1049,7 +1049,7 @@ def getdefichain(basket):
             "priceinreserve": formatted_priceinreserve,
             "currencyids": currencyids,
             "tickers": tickers,
-            "fees": total_fees,  # Add aggregated fees (multiplied by resp) to the result
+            #"fees": total_fees,  # Add aggregated fees (multiplied by resp) to the result
         })
     
     formatted_baskets = []
