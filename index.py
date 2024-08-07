@@ -56,6 +56,16 @@ arr_token_holders = [
     "0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7"
 ]
 
+basket_format = {
+    "Bridge.vETH": {"VRSC", "DAI", "MKR", "ETH"},
+    "Switch": {"VRSC", "DAI", "USDC", "EURC"},
+    "Kaiju": {"VRSC", "USDT", "ETH", "tBTC"},
+    "Pure": {"VRSC", "tBTC"},
+    "whales": {"VRSC"},
+    "Bridge.vARRR": {"VRSC", "vARRR", "Bridge.vETH", "tBTC"},
+    "Bridge.vDEX": {"VRSC", "vDEX", "ETH", "DAI", "tBTC"},
+}
+
 def send_request(method, url, headers, data):
     response = requests.request(method, url, headers=headers, json=data)
     response.raise_for_status()
@@ -78,11 +88,18 @@ def getallbaskets():
     }
     response = send_request(**requestData)
     if isinstance(response, dict) and 'result' in response and isinstance(response['result'], list):
-        fully_qualified_names = [item["fullyqualifiedname"] for item in response['result']]
-        return fully_qualified_names
+        fully_qualified_names = []
+        i_strings = []
+        for item in response['result']:
+            fully_qualified_name = item.get("fullyqualifiedname")
+            i_string = next((key for key in item if key.startswith('i') and len(key) == 34), None)
+            if fully_qualified_name and i_string:
+                fully_qualified_names.append(fully_qualified_name)
+                i_strings.append(i_string)
+        return fully_qualified_names, i_strings
     else:
         print("Unexpected response format")
-        return []
+        return [], []
 
 def get_pie_value():
     web3 = Web3(Web3.HTTPProvider(INFURAURL))
@@ -542,16 +559,19 @@ def getcurrencyvolumeinfo(currency, fromblock, endblock, interval, volumecurrenc
         nresponse = response['result'][1]['conversiondata']
         if all(key in nresponse for key in ["volumecurrency", "volumepairs", "volumethisinterval"]):
             new_response = nresponse['volumepairs']
+            new_volume_response = nresponse['volumethisinterval']
         else:
             new_response = None
+            new_volume_response = None
     except (KeyError, IndexError):
         new_response = None
-    return new_response
+        new_volume_response = None
+    return new_response, new_volume_response
 
 def calculatevolumeinfo():
     currblock = latest_block()
     blockint = int(currblock) - 1440
-    baskets = getallbaskets()
+    baskets, i_addresses = getallbaskets()
     
     data = {}
     for basket in baskets:
@@ -767,6 +787,88 @@ def extract_i_address(data):
                 return key
     return None
 
+def get_verus_coin_price():
+    # Get Verus Coin price from Yahoo Finance
+    verus = yf.Ticker("VRSC-USD")  # Replace with correct symbol if needed
+    return Decimal(verus.history(period="1d")["Close"].iloc[-1])
+
+# def get_currencyconverters(basket_name):
+#     networkblocks = latest_block()
+#     reserves = dai_reserves()
+#     resp = get_reserve_dai_price(reserves)
+#     supply = get_basket_supply(basket_name)
+
+#     requestData = {
+#         "method": "post",
+#         "url": "https://rpc.vrsc.komodefi.com/",
+#         "headers": {"Content-Type": "application/json"},
+#         "data": {
+#             "method": "getcurrencyconverters",
+#             "params": [basket_name],
+#             "id": 1
+#         }
+#     }
+#     response = send_request(**requestData)
+
+#     data = response.get('result')
+#     if not data:
+#         return None
+
+#     i_address = extract_i_address(data)
+#     if not i_address:
+#         return None
+
+#     total_initialsupply = 0
+#     total_startblock = 0
+#     total_reservein = 0
+#     total_reserveout = 0
+#     reserves = []
+#     priceinreserve = []
+
+#     for item in data:
+#         currency_info = item.get(i_address)
+#         last_notarization = item.get('lastnotarization')
+
+#         if currency_info:
+#             total_initialsupply += currency_info.get('initialsupply', 0)
+#             total_startblock += currency_info.get('startblock', 0)
+
+#         if last_notarization:
+#             currencystate = last_notarization.get('currencystate', {})
+#             currencies = currencystate.get('currencies', {})
+#             print(currencies)
+
+#             for key, value in currencies.items():
+#                 total_reservein += value.get('reservein', 0)
+#                 total_reserveout += value.get('reserveout', 0)
+
+#             reservecurrencies = currencystate.get('reservecurrencies', [])
+#             for rc in reservecurrencies:
+#                 reserves.append(rc.get('reserves', 0))
+#                 priceinreserve.append(rc.get('priceinreserve', 0))
+
+#     volume = total_reservein + total_reserveout
+
+#     # Creating the output dictionary
+#     output = {
+#         "bridge": basket_name,
+#         "i_address": i_address,
+#         "initialsupply": total_initialsupply,
+#         "supply": supply,
+#         "startblock": total_startblock,
+#         "block": networkblocks,
+#         "blk_volume": volume,
+#     }
+
+#     # Adding reserve and price information to the output, with filtering for specific basket
+#     for i in range(len(reserves)):
+#         if basket_name == "Bridge.vETH" and i >= 4:
+#             continue
+#         output[f"reserves_{i}"] = reserves[i] * resp
+#         output[f"price_in_reserves_{i}"] = priceinreserve[i] * resp
+
+#     return output
+
 def get_currencyconverters(basket_name):
     networkblocks = latest_block()
     reserves = dai_reserves()
@@ -811,7 +913,7 @@ def get_currencyconverters(basket_name):
         if last_notarization:
             currencystate = last_notarization.get('currencystate', {})
             currencies = currencystate.get('currencies', {})
-
+            
             for key, value in currencies.items():
                 total_reservein += value.get('reservein', 0)
                 total_reserveout += value.get('reserveout', 0)
@@ -823,9 +925,11 @@ def get_currencyconverters(basket_name):
 
     volume = total_reservein + total_reserveout
 
-    # Creating the output dictionary
+    # Fetch the currency list from basket_format
+    currency_list = basket_format.get(basket_name, [])
     output = {
         "bridge": basket_name,
+        "i_address": i_address,
         "initialsupply": total_initialsupply,
         "supply": supply,
         "startblock": total_startblock,
@@ -833,12 +937,11 @@ def get_currencyconverters(basket_name):
         "blk_volume": volume,
     }
 
-    # Adding reserve and price information to the output, with filtering for specific basket
-    for i in range(len(reserves)):
-        if basket_name == "Bridge.vETH" and i >= 4:
-            continue
-        output[f"reserves_{i}"] = reserves[i] * resp
-        output[f"price_in_reserves_{i}"] = priceinreserve[i] * resp
+    # Add reserve and price information to the output with dynamic keys
+    for i, currency in enumerate(currency_list):
+        if i < len(reserves):
+            output[f"{currency}_reserves"] = reserves[i] * resp
+            output[f"{currency}_price_in_reserves"] = priceinreserve[i] * resp
 
     return output
 
@@ -1622,19 +1725,6 @@ def routegetaddressbalance(address: str):
     response = get_address_balance(newaddress)
     return response
 
-@app.get('/getbasketinfo/')
-def routegetbasketsupply():
-    try:
-        baskets = getallbaskets()
-        data = []
-        for basket in baskets:
-            basket_info = get_currencyconverters(basket)
-            if basket_info:
-                data.append(basket_info)
-        return data
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.get('/getcurrencyvolumes')
 def routegetcurrencyvolumes():
     jsond = calculatevolumeinfo()
@@ -1646,14 +1736,14 @@ def routegetcurrencyvolumes():
 
 @app.get('/market/allTickers')
 def routegetalltickers():
-    baskets = getallbaskets()
+    baskets, i_addresses = getallbaskets()
     latestblock = latest_block()
     volblock = int(latestblock) - 1440
     timestamp = int(time.time() * 1000)
     ticker_info = []
 
     for basket in baskets:
-        volume_info = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "VRSC")
+        volume_info, currencyvolume = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "VRSC")
         getvrscweightsfrombaskets = getvrscreserves_frombaskets(basket)
         weightedreserves = np.array(getvrscweightsfrombaskets)
 
@@ -1668,11 +1758,11 @@ def routegetalltickers():
                     convertto = pair['convertto'].replace(".vETH", "").lstrip('v')
 
                 if currency == "VRSC" or convertto == "VRSC":
-                    # If the pair involves Bridge.vETH, ensure VRSC is first
+                    # Reverse currency and convertto in the pair
                     if currency == "Bridge.vETH" or convertto == "Bridge.vETH":
-                        currency_pair = f"VRSC-Bridge.vETH" if currency == "Bridge.vETH" else f"VRSC-{convertto}"
+                        currency_pair = f"Bridge.vETH-VRSC" if currency == "Bridge.vETH" else f"{convertto}-VRSC"
                     else:
-                        currency_pair = f"{currency}-{convertto}"
+                        currency_pair = f"{convertto}-{currency}"
 
                     # Calculate weights based on volume
                     weights = pair['volume'] / np.sum(pair['volume'])
@@ -1737,6 +1827,12 @@ def routegetalltickers():
     # Convert combined ticker info to list
     final_ticker_info = list(combined_ticker_info.values())
 
+    # Flip VRSC-MKR to MKR-VRSC
+    for ticker in final_ticker_info:
+        if ticker['symbol'] == "VRSC-MKR":
+            ticker['symbol'] = "MKR-VRSC"
+            ticker['symbolName'] = "MKR-VRSC"
+
     return {
         "code": "200000",
         "data": {
@@ -1745,63 +1841,10 @@ def routegetalltickers():
         }
     }
 
-# @app.get('/gettvl')
-# def gettvl():
-#     try:
-#         baskets = getallbaskets()
-#         data = []
-#         for basket in baskets:
-#             basket_info = get_currencyconverters(basket)
-#             if basket_info:
-#                 data.append(basket_info)
-#         dai_price = get_dai_price()
-#         pie_value = get_pie_value()
-#         dai_usd_value = pie_value * dai_price
-
-#         eth_price = get_eth_price()
-#         eth_balance = get_eth_balance(arr_token_holders[0])
-
-#         token_balances = {}
-#         network_tvl = dai_usd_value + (eth_balance * eth_price)
-
-#         for token_contract, decimals in arr_token_contracts.items():
-#             balance = get_token_balance(token_contract, decimals)
-#             price = get_token_price(token_contract)
-#             usd_value = balance * price
-#             token_balances[token_contract] = {
-#                 'balance': '{:.10f}'.format(balance),
-#                 'usd_value': '{:.8f}'.format(usd_value)
-#             }
-#             network_tvl += usd_value
-
-#         token_balances['Network_TVL'] = '{:.8f}'.format(network_tvl)
-
-#         return {
-#             "code": "200000",
-#             "data": {
-#                 "result": token_balances
-#             }
-#         }
-#     except HTTPException as e:
-#         return {
-#             "code": "500000",
-#             "message": e.detail
-#         }
-#     except Exception as e:
-#         return {
-#             "code": "500000",
-#             "message": f"An unexpected error occurred: {str(e)}"
-#         }
-
-def get_verus_coin_price():
-    # Get Verus Coin price from Yahoo Finance
-    verus = yf.Ticker("VRSC-USD")  # Replace with correct symbol if needed
-    return Decimal(verus.history(period="1d")["Close"].iloc[-1])
-
 @app.get('/gettvl')
 def gettvl():
     try:
-        baskets = getallbaskets()
+        baskets, i_addresses = getallbaskets()
         data = []
         for basket in baskets:
             basket_info = get_currencyconverters(basket)
@@ -1870,6 +1913,43 @@ def gettvl():
             "code": "500000",
             "message": f"An unexpected error occurred: {str(e)}"
         }
-    
+
+# @app.get('/getbasketinfo/')
+# def routegetbasketsupply():
+#     try:
+#         baskets, i_addresses = getallbaskets()
+#         data = []
+#         for basket in baskets:
+#             basket_info = get_currencyconverters(basket)
+#             if basket_info:
+#                 data.append(basket_info)
+#         return data
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get('/getbasketinfo/')
+def routegetbasketsupply():
+    try:
+        baskets, i_addresses = getallbaskets()
+        data = []
+        for basket, i_address in zip(baskets, i_addresses):
+            basket_info = get_currencyconverters(basket)
+            if basket_info:
+                basket_info['bridge'] = basket
+                basket_info['i_address'] = i_address
+                data.append(basket_info)
+        
+        timestamp = int(time.time() * 1000)
+        response_data = {
+            "code": "200000",
+            "data": {
+                "time": timestamp,
+                "result": data
+            }
+        }
+        return response_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(PORT))
