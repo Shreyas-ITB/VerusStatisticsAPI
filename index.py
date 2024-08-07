@@ -66,6 +66,9 @@ arr_currencies = [
     {"currencyid": "iSYJ5L91bURKemiuALK1uBUXad3ZKCpDX7", "ticker": "paxg.vETH"},
     {"currencyid": "i7eFvyL44S2iWz9EZjd6HTaBioFqhALcdi", "ticker": "xaut.vETH"},
     {"currencyid": "iL62spNN42Vqdxh8H5nrfNe8d6Amsnfkdx", "ticker": "NATI.vETH"},
+    {"currencyid": "i4Xr5TAMrDTD99H69EemhjDxJ4ktNskUtc", "ticker": "Switch" },
+    {"currencyid": "i9kVWKU2VwARALpbXn4RS9zvrhvNRaUibb", "ticker": "Kaiju"},
+    {"currencyid": "iHax5qYQGbcMGqJKKrPorpzUBX2oFFXGnY", "ticker": "PURE.vETH"},
 ]
 
 arr_token_contracts = {
@@ -80,16 +83,6 @@ arr_token_holders = [
     "0x71518580f36FeCEFfE0721F06bA4703218cD7F63",
     "0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7"
 ]
-
-basket_format = {
-    "Bridge.vETH": {"VRSC", "DAI", "MKR", "ETH"},
-    "Switch": {"VRSC", "DAI", "USDC", "EURC"},
-    "Kaiju": {"VRSC", "USDT", "ETH", "tBTC"},
-    "Pure": {"VRSC", "tBTC"},
-    "whales": {"VRSC"},
-    "Bridge.vARRR": {"VRSC", "vARRR", "Bridge.vETH", "tBTC"},
-    "Bridge.vDEX": {"VRSC", "vDEX", "ETH", "DAI", "tBTC"},
-}
 
 def send_request(method, url, headers, data):
     response = requests.request(method, url, headers=headers, json=data)
@@ -593,6 +586,29 @@ def getcurrencyvolumeinfo(currency, fromblock, endblock, interval, volumecurrenc
         new_volume_response = None
     return new_response, new_volume_response
 
+def getdefivolume(currency, fromblock, endblock, interval, volumecurrency):
+    requestData = {
+        "method": "post",
+        "url": RPCURL,
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrencystate",
+            "params": [currency, f"{fromblock}, {endblock}, {interval}", volumecurrency],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
+    
+    try:
+        nresponse = response['result'][1]['conversiondata']
+        if all(key in nresponse for key in ["volumecurrency", "volumepairs", "volumethisinterval"]):
+            new_volume_response = nresponse['volumethisinterval']
+        else:
+            new_volume_response = None
+    except (KeyError, IndexError):
+        new_volume_response = None
+    return new_volume_response
+
 def calculatevolumeinfo():
     currblock = latest_block()
     blockint = int(currblock) - 1440
@@ -817,82 +833,69 @@ def get_verus_coin_price():
     verus = yf.Ticker("VRSC-USD")  # Replace with correct symbol if needed
     return Decimal(verus.history(period="1d")["Close"].iloc[-1])
 
-# def get_currencyconverters(basket_name):
-#     networkblocks = latest_block()
-#     reserves = dai_reserves()
-#     resp = get_reserve_dai_price(reserves)
-#     supply = get_basket_supply(basket_name)
+def get_currencyconverters(basket_name):
+    networkblocks = latest_block()
+    reserves = dai_reserves()
+    resp = get_reserve_dai_price(reserves)
+    supply = get_basket_supply(basket_name)
 
-#     requestData = {
-#         "method": "post",
-#         "url": "https://rpc.vrsc.komodefi.com/",
-#         "headers": {"Content-Type": "application/json"},
-#         "data": {
-#             "method": "getcurrencyconverters",
-#             "params": [basket_name],
-#             "id": 1
-#         }
-#     }
-#     response = send_request(**requestData)
+    requestData = {
+        "method": "post",
+        "url": "https://rpc.vrsc.komodefi.com/",
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrencyconverters",
+            "params": [basket_name],
+            "id": 1
+        }
+    }
+    response = send_request(**requestData)
 
-#     data = response.get('result')
-#     if not data:
-#         return None
+    data = response.get('result')
+    if not data:
+        return None
 
-#     i_address = extract_i_address(data)
-#     if not i_address:
-#         return None
+    i_address = extract_i_address(data)
+    if not i_address:
+        return None
 
-#     total_initialsupply = 0
-#     total_startblock = 0
-#     total_reservein = 0
-#     total_reserveout = 0
-#     reserves = []
-#     priceinreserve = []
+    total_initialsupply = 0
+    total_startblock = 0
+    total_reservein = 0
+    total_reserveout = 0
+    reserves = []
+    priceinreserve = []
 
-#     for item in data:
-#         currency_info = item.get(i_address)
-#         last_notarization = item.get('lastnotarization')
+    for item in data:
+        last_notarization = item.get('lastnotarization')
+        if last_notarization:
+            currencystate = last_notarization.get('currencystate', {})
+            reservecurrencies = currencystate.get('reservecurrencies', [])
+            for rc in reservecurrencies:
+                reserves.append(rc.get('reserves', 0))
+                priceinreserve.append(rc.get('priceinreserve', 0))
 
-#         if currency_info:
-#             total_initialsupply += currency_info.get('initialsupply', 0)
-#             total_startblock += currency_info.get('startblock', 0)
+    volume = total_reservein + total_reserveout
 
-#         if last_notarization:
-#             currencystate = last_notarization.get('currencystate', {})
-#             currencies = currencystate.get('currencies', {})
-#             print(currencies)
+    # Creating the output dictionary
+    output = {
+        "bridge": basket_name,
+        "i_address": i_address,
+        "initialsupply": total_initialsupply,
+        "supply": supply,
+        "startblock": total_startblock,
+        "block": networkblocks,
+        "blk_volume": volume,
+    }
 
-#             for key, value in currencies.items():
-#                 total_reservein += value.get('reservein', 0)
-#                 total_reserveout += value.get('reserveout', 0)
+    # Adding reserve and price information to the output, with filtering for specific basket
+    for i in range(len(reserves)):
+        if basket_name == "Bridge.vETH" and i >= 4:
+            continue
+        output[f"reserves_{i}"] = reserves[i] * resp
+        output[f"price_in_reserves_{i}"] = priceinreserve[i] * resp
 
-#             reservecurrencies = currencystate.get('reservecurrencies', [])
-#             for rc in reservecurrencies:
-#                 reserves.append(rc.get('reserves', 0))
-#                 priceinreserve.append(rc.get('priceinreserve', 0))
-
-#     volume = total_reservein + total_reserveout
-
-#     # Creating the output dictionary
-#     output = {
-#         "bridge": basket_name,
-#         "i_address": i_address,
-#         "initialsupply": total_initialsupply,
-#         "supply": supply,
-#         "startblock": total_startblock,
-#         "block": networkblocks,
-#         "blk_volume": volume,
-#     }
-
-#     # Adding reserve and price information to the output, with filtering for specific basket
-#     for i in range(len(reserves)):
-#         if basket_name == "Bridge.vETH" and i >= 4:
-#             continue
-#         output[f"reserves_{i}"] = reserves[i] * resp
-#         output[f"price_in_reserves_{i}"] = priceinreserve[i] * resp
-
-#     return output
+    return output
 
 def get_currencyconverters(basket_name):
     networkblocks = latest_block()
@@ -938,7 +941,7 @@ def get_currencyconverters(basket_name):
         if last_notarization:
             currencystate = last_notarization.get('currencystate', {})
             currencies = currencystate.get('currencies', {})
-            
+
             for key, value in currencies.items():
                 total_reservein += value.get('reservein', 0)
                 total_reserveout += value.get('reserveout', 0)
@@ -950,11 +953,9 @@ def get_currencyconverters(basket_name):
 
     volume = total_reservein + total_reserveout
 
-    # Fetch the currency list from basket_format
-    currency_list = basket_format.get(basket_name, [])
+    # Creating the output dictionary
     output = {
         "bridge": basket_name,
-        "i_address": i_address,
         "initialsupply": total_initialsupply,
         "supply": supply,
         "startblock": total_startblock,
@@ -962,13 +963,114 @@ def get_currencyconverters(basket_name):
         "blk_volume": volume,
     }
 
-    # Add reserve and price information to the output with dynamic keys
-    for i, currency in enumerate(currency_list):
-        if i < len(reserves):
-            output[f"{currency}_reserves"] = reserves[i] * resp
-            output[f"{currency}_price_in_reserves"] = priceinreserve[i] * resp
+    # Adding reserve and price information to the output, with filtering for specific basket
+    for i in range(len(reserves)):
+        if basket_name == "Bridge.vETH" and i >= 4:
+            continue
+        output[f"reserves_{i}"] = reserves[i] * resp
+        output[f"price_in_reserves_{i}"] = priceinreserve[i] * resp
 
     return output
+
+def getdefichain(basket):
+    reserves = dai_reserves()
+    resp = get_reserve_dai_price(reserves)
+    latest = latest_block()
+    volblock = int(latest) - 1440
+    
+    requestData = {
+        "method": "post",
+        "url": "https://rpc.vrsc.komodefi.com/",
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrencyconverters",
+            "params": [basket],
+            "id": 1
+        }
+    }
+    
+    response = send_request(**requestData)
+    data = response.get('result')
+    if not data:
+        return None
+
+    result = []
+    volume_info = {}
+
+    # Get volume information for each basket
+    for item in data:
+        fully_qualified_name = item.get('fullyqualifiedname')
+        i_address = next((key for key in item.keys() if key.startswith('i') and len(key) > 1), None)
+        
+        reserves = []
+        priceinreserve = []
+        currencyids = []
+        total_fees = 0.0
+        
+        if i_address:
+            currency_data = item[i_address]
+            last_notarization = item.get('lastnotarization')
+            if last_notarization:
+                currencystate = last_notarization.get('currencystate', {})
+                reservecurrencies = currencystate.get('reservecurrencies', [])
+                currencies = currencystate.get('currencies', {})
+                for rc in reservecurrencies:
+                    reserves_value = rc.get('reserves', 0) * resp
+                    priceinreserve_value = rc.get('priceinreserve', 0) * resp
+                    reserves.append(reserves_value)
+                    priceinreserve.append(priceinreserve_value)
+                    currencyids.append(rc.get('currencyid'))
+
+                # Aggregate and multiply all 'fees' from the 'currencystate.currencies'
+                for currency_id, currency_info in currencies.items():
+                    total_fees += currency_info.get('fees', 0)
+                
+                total_fees *= resp  # Multiply the aggregated fees by resp
+        
+        tickers = [get_ticker_by_currency_id(currency_id) for currency_id in currencyids]
+        
+        # Get volume for the current basket
+        volume = getdefivolume(basket, volblock, latest, 1440, "VRSC")
+        if volume is not None:
+            if isinstance(volume, list):
+                for vol in volume:
+                    volume_info[vol['basket_name']] = vol['volume']
+            else:
+                volume_info[basket] = volume  # Handle the case where volume is a single float value
+        else:
+            volume_info[basket] = None
+        
+        formatted_priceinreserve = [format(value, '.10f') for value in priceinreserve]
+        
+        result.append({
+            "fullyqualifiedname": fully_qualified_name,
+            "i_address": i_address,
+            "reserves": reserves,
+            "priceinreserve": formatted_priceinreserve,
+            "currencyids": currencyids,
+            "tickers": tickers,
+            "fees": total_fees,  # Add aggregated fees (multiplied by resp) to the result
+        })
+    
+    formatted_baskets = []
+    for basket in result:
+        formatted_basket = {
+            "liquiditypool": basket['fullyqualifiedname'],
+            "lp_address": basket['i_address'],
+            "fees": basket['fees'],  # Add fees to the formatted_basket
+            "lp_volume": volume_info.get(basket['fullyqualifiedname'], None),  # Include volume in the formatted basket
+            "tokens": []
+        }
+        for i, ticker in enumerate(basket['tickers']):
+            formatted_basket["tokens"].append({
+                "ticker": ticker,
+                "reserves": basket['reserves'][i],
+                "priceinreserve": float(basket['priceinreserve'][i]),
+                "i_address": basket['currencyids'][i]
+            })
+        formatted_baskets.append(formatted_basket)
+
+    return formatted_baskets
 
 @app.get("/")
 def main():    
@@ -1750,6 +1852,19 @@ def routegetaddressbalance(address: str):
     response = get_address_balance(newaddress)
     return response
 
+@app.get('/getbasketinfo/')
+def routegetbasketsupply():
+    try:
+        baskets, i_addresses = getallbaskets()
+        data = []
+        for basket in baskets:
+            basket_info = get_currencyconverters(basket)
+            if basket_info:
+                data.append(basket_info)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get('/getcurrencyvolumes')
 def routegetcurrencyvolumes():
     jsond = calculatevolumeinfo()
@@ -1939,42 +2054,33 @@ def gettvl():
             "message": f"An unexpected error occurred: {str(e)}"
         }
 
-# @app.get('/getbasketinfo/')
-# def routegetbasketsupply():
-#     try:
-#         baskets, i_addresses = getallbaskets()
-#         data = []
-#         for basket in baskets:
-#             basket_info = get_currencyconverters(basket)
-#             if basket_info:
-#                 data.append(basket_info)
-#         return data
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-@app.get('/getbasketinfo/')
-def routegetbasketsupply():
+@app.get('/getdefichaininfo')
+def getdefichaininfo():
+    timestamp = int(time.time() * 1000)
     try:
-        baskets, i_addresses = getallbaskets()
-        data = []
-        for basket, i_address in zip(baskets, i_addresses):
-            basket_info = get_currencyconverters(basket)
-            if basket_info:
-                basket_info['bridge'] = basket
-                basket_info['i_address'] = i_address
-                data.append(basket_info)
-        
-        timestamp = int(time.time() * 1000)
-        response_data = {
+        baskets, i = getallbaskets()
+        output = []
+        for basket in baskets:
+            out = getdefichain(basket)
+            for item in out:
+                output.append(item)
+        return {
             "code": "200000",
             "data": {
                 "time": timestamp,
-                "result": data
+                "results": output
             }
         }
-        return response_data
+    except HTTPException as e:
+        return {
+            "code": "500000",
+            "message": e.detail
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {
+            "code": "500000",
+            "message": f"An unexpected error occurred: {str(e)}"
+        }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(PORT))
