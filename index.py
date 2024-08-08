@@ -1930,6 +1930,72 @@ def routegetalltickers():
                         'low': low,
                         'open': openn
                     })
+                # if currency == "ETH" or convertto == "ETH":
+                #     # Reverse currency and convertto in the pair
+                #     if currency == "Bridge.vETH" or convertto == "Bridge.vETH":
+                #         currency_pair = f"Bridge.vETH-ETH" if currency == "Bridge.vETH" else f"{convertto}-ETH"
+                #     else:
+                #         currency_pair = f"{convertto}-{currency}"
+
+                #     # Calculate weights based on volume
+                #     weights = pair['volume'] / np.sum(pair['volume'])
+
+                #     # Invert values if VRSC is the quote currency (second position)
+                #     if convertto == "ETH":
+                #         volume = pair['volume'] * 2
+                #         last = np.dot(weights, 1 / pair['close']) / np.sum(weights)
+                #         high = np.dot(weights, 1 / pair['high']) / np.sum(weights)
+                #         low = np.dot(weights, 1 / pair['low']) / np.sum(weights)
+                #         openn = np.dot(weights, 1 / pair['open']) / np.sum(weights)
+                #     else:
+                #         volume = pair['volume']
+                #         last = np.dot(weights, pair['close']) / np.sum(weights)
+                #         high = np.dot(weights, pair['high']) / np.sum(weights)
+                #         low = np.dot(weights, pair['low']) / np.sum(weights)
+                #         openn = np.dot(weights, pair['open']) / np.sum(weights)
+
+                #     ticker_info.append({
+                #         'symbol': currency_pair,
+                #         'symbolName': currency_pair,
+                #         'volume': volume,
+                #         'last': last,
+                #         'high': high,
+                #         'low': low,
+                #         'open': openn
+                #     })
+                # if currency == "DAI" or convertto == "DAI":
+                #     # Reverse currency and convertto in the pair
+                #     if currency == "Bridge.vETH" or convertto == "Bridge.vETH":
+                #         currency_pair = f"Bridge.vETH-DAI" if currency == "Bridge.vETH" else f"{convertto}-DAI"
+                #     else:
+                #         currency_pair = f"{convertto}-{currency}"
+
+                #     # Calculate weights based on volume
+                #     weights = pair['volume'] / np.sum(pair['volume'])
+
+                #     # Invert values if VRSC is the quote currency (second position)
+                #     if convertto == "DAI":
+                #         volume = pair['volume'] * 2
+                #         last = np.dot(weights, 1 / pair['close']) / np.sum(weights)
+                #         high = np.dot(weights, 1 / pair['high']) / np.sum(weights)
+                #         low = np.dot(weights, 1 / pair['low']) / np.sum(weights)
+                #         openn = np.dot(weights, 1 / pair['open']) / np.sum(weights)
+                #     else:
+                #         volume = pair['volume']
+                #         last = np.dot(weights, pair['close']) / np.sum(weights)
+                #         high = np.dot(weights, pair['high']) / np.sum(weights)
+                #         low = np.dot(weights, pair['low']) / np.sum(weights)
+                #         openn = np.dot(weights, pair['open']) / np.sum(weights)
+
+                #     ticker_info.append({
+                #         'symbol': currency_pair,
+                #         'symbolName': currency_pair,
+                #         'volume': volume,
+                #         'last': last,
+                #         'high': high,
+                #         'low': low,
+                #         'open': openn
+                #     })
 
     # Combine reverse pairs
     combined_ticker_info = {}
@@ -1972,6 +2038,9 @@ def routegetalltickers():
         if ticker['symbol'] == "VRSC-MKR":
             ticker['symbol'] = "MKR-VRSC"
             ticker['symbolName'] = "MKR-VRSC"
+        if ticker['symbol'] == "VRSC-USDC":
+            ticker['symbol'] = "USDC-VRSC"
+            ticker['symbolName'] = "USDC-VRSC"
 
     return {
         "code": "200000",
