@@ -12,7 +12,9 @@ from decimal import Decimal
 
 app = FastAPI()
 load_dotenv(find_dotenv())
-RPCURL = os.environ.get("RPCURL")
+RPCURL = os.environ.get("VRSCRPCURL")
+VARRRRPCURL = os.environ.get("VARRRRPCURL")
+VDEXRPCURL = os.environ.get("VDEXRPCURL")
 PORT = os.environ.get("APIPORT")
 ETHERSCANAPI = os.environ.get("ETHERSCANAPIKEY")
 INFURAURL = os.environ.get("INFURAURL")
@@ -624,7 +626,7 @@ def calculatevolumeinfo():
 def getvrscreserves_frombaskets(basket):
     requestData = {
         "method": "post",
-        "url": "https://rpc.vrsc.komodefi.com/",
+        "url": RPCURL,
         "headers": {"Content-Type": "application/json"},
         "data": {
             "method": "getcurrencyconverters",
@@ -841,7 +843,7 @@ def get_currencyconverters(basket_name):
 
     requestData = {
         "method": "post",
-        "url": "https://rpc.vrsc.komodefi.com/",
+        "url": RPCURL,
         "headers": {"Content-Type": "application/json"},
         "data": {
             "method": "getcurrencyconverters",
@@ -902,17 +904,39 @@ def get_currencyconverters(basket_name):
     reserves = dai_reserves()
     resp = get_reserve_dai_price(reserves)
     supply = get_basket_supply(basket_name)
-
-    requestData = {
+    if basket_name == "Bridge.vARRR":
+        requestData = {
         "method": "post",
-        "url": "https://rpc.vrsc.komodefi.com/",
+        "url": VARRRRPCURL,
         "headers": {"Content-Type": "application/json"},
         "data": {
             "method": "getcurrencyconverters",
             "params": [basket_name],
             "id": 1
+            }
         }
-    }
+    elif basket_name == "Bridge.vDEX":
+        requestData = {
+        "method": "post",
+        "url": VDEXRPCURL,
+        "headers": {"Content-Type": "application/json"},
+        "data": {
+            "method": "getcurrencyconverters",
+            "params": [basket_name],
+            "id": 1
+            }
+        }
+    else:
+        requestData = {
+            "method": "post",
+            "url": RPCURL,
+            "headers": {"Content-Type": "application/json"},
+            "data": {
+                "method": "getcurrencyconverters",
+                "params": [basket_name],
+                "id": 1
+            }
+        }
     response = send_request(**requestData)
 
     data = response.get('result')
@@ -980,7 +1004,7 @@ def getdefichain(basket):
     
     requestData = {
         "method": "post",
-        "url": "https://rpc.vrsc.komodefi.com/",
+        "url": RPCURL,
         "headers": {"Content-Type": "application/json"},
         "data": {
             "method": "getcurrencyconverters",
