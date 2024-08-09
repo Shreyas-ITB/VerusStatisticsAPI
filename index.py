@@ -1933,7 +1933,7 @@ def routegetalltickers():
 
                     # Invert values if VRSC is the quote currency (second position)
                     if convertto == "VRSC":
-                        volume = pair['volume'] * 2
+                        volume = pair['volume']
                         last = np.dot(weights, 1 / pair['close']) / np.sum(weights)
                         high = np.dot(weights, 1 / pair['high']) / np.sum(weights)
                         low = np.dot(weights, 1 / pair['low']) / np.sum(weights)
@@ -2077,6 +2077,9 @@ def routegetalltickers():
         if ticker['symbol'] == "VRSC-Switch":
             ticker['symbol'] = "Switch-VRSC"
             ticker['symbolName'] = "Switch-VRSC"
+        if ticker['symbol'] == "tBTC-VRSC":
+            ticker['symbol'] = "TBTC-VRSC"
+            ticker['symbolName'] = "TBTC-VRSC"
         # if ticker['symbol'] == "DAI-EURC":
         #     ticker['symbol'] = "EURC-DAI"
         #     ticker['symbolName'] = "EURC-DAI"
