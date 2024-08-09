@@ -2062,9 +2062,27 @@ def routegetalltickers():
         if ticker['symbol'] == "VRSC-MKR":
             ticker['symbol'] = "MKR-VRSC"
             ticker['symbolName'] = "MKR-VRSC"
+        if ticker['symbol'] == "VRSC-USDT":
+            ticker['symbol'] = "USDT-VRSC"
+            ticker['symbolName'] = "USDT-VRSC"
+        if ticker['symbol'] == "VRSC-EURC":
+            ticker['symbol'] = "EURC-VRSC"
+            ticker['symbolName'] = "EURC-VRSC"
         if ticker['symbol'] == "VRSC-USDC":
             ticker['symbol'] = "USDC-VRSC"
             ticker['symbolName'] = "USDC-VRSC"
+        if ticker['symbol'] == "VRSC-Kaiju":
+            ticker['symbol'] = "Kaiju-VRSC"
+            ticker['symbolName'] = "Kaiju-VRSC"
+        if ticker['symbol'] == "VRSC-Switch":
+            ticker['symbol'] = "Switch-VRSC"
+            ticker['symbolName'] = "Switch-VRSC"
+        # if ticker['symbol'] == "DAI-EURC":
+        #     ticker['symbol'] = "EURC-DAI"
+        #     ticker['symbolName'] = "EURC-DAI"
+        # if ticker['symbol'] == "DAI-USDC":
+        #     ticker['symbol'] = "USDC-DAI"
+        #     ticker['symbolName'] = "USDC-DAI"
 
     return {
         "code": "200000",
