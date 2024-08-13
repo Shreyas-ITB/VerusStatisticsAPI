@@ -19,7 +19,7 @@ from functions.getaddressbalance import get_address_balance
 from functions.extracttransfers import extract_transfers
 from functions.getallbaskets import getallbaskets
 from functions.getcurrencyconverters import get_currencyconverters
-from functions.getvrscreservesfrmbaskets import getvrscreserves_frombaskets
+from functions.markettickers import getmarkettickers
 from functions.gettokenbalance import *
 from functions.gettokenprice import *
 from functions.getvolinfo import *
@@ -278,161 +278,12 @@ def routegetalltickers():
     latestblock = latest_block()
     volblock = int(latestblock) - 1440
     timestamp = int(time.time() * 1000)
-    ticker_info = []
-
-    for basket in baskets:
-        volume_info, currencyvolume = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "VRSC")
-        getvrscweightsfrombaskets = getvrscreserves_frombaskets(basket)
-        weightedreserves = np.array(getvrscweightsfrombaskets)
-
-        if volume_info is not None:
-            for pair in volume_info:
-                # Remove .vETH suffix and 'v' prefix from currency names
-                if pair['currency'] == "Bridge.vETH" or pair['convertto'] == "Bridge.vETH":
-                    currency = pair['currency']
-                    convertto = pair['convertto']
-                else:
-                    currency = pair['currency'].replace(".vETH", "").lstrip('v')
-                    convertto = pair['convertto'].replace(".vETH", "").lstrip('v')
-
-                if currency == "VRSC" or convertto == "VRSC":
-                    # Reverse currency and convertto in the pair
-                    if currency == "Bridge.vETH" or convertto == "Bridge.vETH":
-                        currency_pair = f"Bridge.vETH-VRSC" if currency == "Bridge.vETH" else f"{convertto}-VRSC"
-                    else:
-                        currency_pair = f"{convertto}-{currency}"
-
-                    # Calculate weights based on volume
-                    weights = pair['volume'] / np.sum(pair['volume'])
-
-                    # Invert values if VRSC is the quote currency (second position)
-                    if convertto == "VRSC":
-                        volume = pair['volume']
-                        last = np.dot(weights, 1 / pair['close']) / np.sum(weights)
-                        high = np.dot(weights, 1 / pair['high']) / np.sum(weights)
-                        low = np.dot(weights, 1 / pair['low']) / np.sum(weights)
-                        openn = np.dot(weights, 1 / pair['open']) / np.sum(weights)
-                    else:
-                        volume = pair['volume']
-                        last = np.dot(weights, pair['close']) / np.sum(weights)
-                        high = np.dot(weights, pair['high']) / np.sum(weights)
-                        low = np.dot(weights, pair['low']) / np.sum(weights)
-                        openn = np.dot(weights, pair['open']) / np.sum(weights)
-
-                    ticker_info.append({
-                        'symbol': currency_pair,
-                        'symbolName': currency_pair,
-                        'volume': volume,
-                        'last': last,
-                        'high': high,
-                        'low': low,
-                        'open': openn
-                    })
-                # if currency == "ETH" or convertto == "ETH":
-                #     # Reverse currency and convertto in the pair
-                #     if currency == "Bridge.vETH" or convertto == "Bridge.vETH":
-                #         currency_pair = f"Bridge.vETH-ETH" if currency == "Bridge.vETH" else f"{convertto}-ETH"
-                #     else:
-                #         currency_pair = f"{convertto}-{currency}"
-
-                #     # Calculate weights based on volume
-                #     weights = pair['volume'] / np.sum(pair['volume'])
-
-                #     # Invert values if VRSC is the quote currency (second position)
-                #     if convertto == "ETH":
-                #         volume = pair['volume'] * 2
-                #         last = np.dot(weights, 1 / pair['close']) / np.sum(weights)
-                #         high = np.dot(weights, 1 / pair['high']) / np.sum(weights)
-                #         low = np.dot(weights, 1 / pair['low']) / np.sum(weights)
-                #         openn = np.dot(weights, 1 / pair['open']) / np.sum(weights)
-                #     else:
-                #         volume = pair['volume']
-                #         last = np.dot(weights, pair['close']) / np.sum(weights)
-                #         high = np.dot(weights, pair['high']) / np.sum(weights)
-                #         low = np.dot(weights, pair['low']) / np.sum(weights)
-                #         openn = np.dot(weights, pair['open']) / np.sum(weights)
-
-                #     ticker_info.append({
-                #         'symbol': currency_pair,
-                #         'symbolName': currency_pair,
-                #         'volume': volume,
-                #         'last': last,
-                #         'high': high,
-                #         'low': low,
-                #         'open': openn
-                #     })
-                # if currency == "DAI" or convertto == "DAI":
-                #     # Reverse currency and convertto in the pair
-                #     if currency == "Bridge.vETH" or convertto == "Bridge.vETH":
-                #         currency_pair = f"Bridge.vETH-DAI" if currency == "Bridge.vETH" else f"{convertto}-DAI"
-                #     else:
-                #         currency_pair = f"{convertto}-{currency}"
-
-                #     # Calculate weights based on volume
-                #     weights = pair['volume'] / np.sum(pair['volume'])
-
-                #     # Invert values if VRSC is the quote currency (second position)
-                #     if convertto == "DAI":
-                #         volume = pair['volume'] * 2
-                #         last = np.dot(weights, 1 / pair['close']) / np.sum(weights)
-                #         high = np.dot(weights, 1 / pair['high']) / np.sum(weights)
-                #         low = np.dot(weights, 1 / pair['low']) / np.sum(weights)
-                #         openn = np.dot(weights, 1 / pair['open']) / np.sum(weights)
-                #     else:
-                #         volume = pair['volume']
-                #         last = np.dot(weights, pair['close']) / np.sum(weights)
-                #         high = np.dot(weights, pair['high']) / np.sum(weights)
-                #         low = np.dot(weights, pair['low']) / np.sum(weights)
-                #         openn = np.dot(weights, pair['open']) / np.sum(weights)
-
-                #     ticker_info.append({
-                #         'symbol': currency_pair,
-                #         'symbolName': currency_pair,
-                #         'volume': volume,
-                #         'last': last,
-                #         'high': high,
-                #         'low': low,
-                #         'open': openn
-                #     })
-
-    # Combine reverse pairs
-    combined_ticker_info = {}
-    for ticker in ticker_info:
-        symbol = ticker['symbol']
-        reverse_symbol = "-".join(symbol.split("-")[::-1])
-
-        if symbol in combined_ticker_info:
-            combined_volume = combined_ticker_info[symbol]['volume'] + ticker['volume']
-            combined_weights = np.array([combined_ticker_info[symbol]['volume'], ticker['volume']]) / combined_volume
-            combined_ticker_info[symbol]['volume'] = combined_volume
-            combined_ticker_info[symbol]['last'] = np.dot(
-                [combined_ticker_info[symbol]['last'], ticker['last']], combined_weights)
-            combined_ticker_info[symbol]['high'] = np.dot(
-                [combined_ticker_info[symbol]['high'], ticker['high']], combined_weights)
-            combined_ticker_info[symbol]['low'] = np.dot(
-                [combined_ticker_info[symbol]['low'], ticker['low']], combined_weights)
-            combined_ticker_info[symbol]['open'] = np.dot(
-                [combined_ticker_info[symbol]['open'], ticker['open']], combined_weights)
-        elif reverse_symbol in combined_ticker_info:
-            combined_volume = combined_ticker_info[reverse_symbol]['volume'] + ticker['volume']
-            combined_weights = np.array([combined_ticker_info[reverse_symbol]['volume'], ticker['volume']]) / combined_volume
-            combined_ticker_info[reverse_symbol]['volume'] = combined_volume
-            combined_ticker_info[reverse_symbol]['last'] = np.dot(
-                [combined_ticker_info[reverse_symbol]['last'], ticker['last']], combined_weights)
-            combined_ticker_info[reverse_symbol]['high'] = np.dot(
-                [combined_ticker_info[reverse_symbol]['high'], ticker['low']], combined_weights)
-            combined_ticker_info[reverse_symbol]['low'] = np.dot(
-                [combined_ticker_info[reverse_symbol]['low'], ticker['high']], combined_weights)
-            combined_ticker_info[reverse_symbol]['open'] = np.dot(
-                [combined_ticker_info[reverse_symbol]['open'], ticker['open']], combined_weights)
-        else:
-            combined_ticker_info[symbol] = ticker
-
-    # Convert combined ticker info to list
-    final_ticker_info = list(combined_ticker_info.values())
-
-    # Flip VRSC-MKR to MKR-VRSC
-    for ticker in final_ticker_info:
+    ticker_infovrsc = []
+    ticker_infoeth = []
+    ticker_infodai = []
+    excluded_pairs = ["DAI-VRSC", "VRSC-DAI", "DAI-ETH", "ETH-DAI", "VRSC-ETH", "ETH-VRSC"]
+    final_ticker_infovrsc, final_ticker_infodai, final_ticker_infoeth = getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_infodai, ticker_infoeth, excluded_pairs)
+    for ticker in final_ticker_infovrsc:
         if ticker['symbol'] == "VRSC-MKR":
             ticker['symbol'] = "MKR-VRSC"
             ticker['symbolName'] = "MKR-VRSC"
@@ -457,13 +308,63 @@ def routegetalltickers():
         if ticker['symbol'] == "VRSC-whales":
             ticker['symbol'] = "whales-VRSC"
             ticker['symbolName'] = "whales-VRSC"
-        # if ticker['symbol'] == "DAI-EURC":
-        #     ticker['symbol'] = "EURC-DAI"
-        #     ticker['symbolName'] = "EURC-DAI"
-        # if ticker['symbol'] == "DAI-USDC":
-        #     ticker['symbol'] = "USDC-DAI"
-        #     ticker['symbolName'] = "USDC-DAI"
 
+    for ticker in final_ticker_infodai:
+        if ticker['symbol'] == "DAI-MKR":
+            ticker['symbol'] = "MKR-DAI"
+            ticker['symbolName'] = "MKR-DAI"
+        if ticker['symbol'] == "DAI-USDT":
+            ticker['symbol'] = "USDT-DAI"
+            ticker['symbolName'] = "USDT-DAI"
+        if ticker['symbol'] == "DAI-EURC":
+            ticker['symbol'] = "EURC-DAI"
+            ticker['symbolName'] = "EURC-DAI"
+        if ticker['symbol'] == "DAI-ETH":
+            ticker['symbol'] = "ETH-DAI"
+            ticker['symbolName'] = "ETH-DAI"
+        if ticker['symbol'] == "DAI-USDC":
+            ticker['symbol'] = "USDC-DAI"
+            ticker['symbolName'] = "USDC-DAI"
+        if ticker['symbol'] == "DAI-Kaiju":
+            ticker['symbol'] = "Kaiju-DAI"
+            ticker['symbolName'] = "Kaiju-DAI"
+        if ticker['symbol'] == "DAI-Switch":
+            ticker['symbol'] = "Switch-DAI"
+            ticker['symbolName'] = "Switch-DAI"
+        if ticker['symbol'] == "tBTC-DAI":
+            ticker['symbol'] = "TBTC-DAI"
+            ticker['symbolName'] = "TBTC-DAI"
+        if ticker['symbol'] == "DAI-whales":
+            ticker['symbol'] = "whales-DAI"
+            ticker['symbolName'] = "whales-DAI"
+
+    for ticker in final_ticker_infoeth:
+        if ticker['symbol'] == "ETH-MKR":
+            ticker['symbol'] = "MKR-ETH"
+            ticker['symbolName'] = "MKR-ETH"
+        if ticker['symbol'] == "ETH-USDT":
+            ticker['symbol'] = "USDT-ETH"
+            ticker['symbolName'] = "USDT-ETH"
+        if ticker['symbol'] == "ETH-EURC":
+            ticker['symbol'] = "EURC-ETH"
+            ticker['symbolName'] = "EURC-ETH"
+        if ticker['symbol'] == "ETH-USDC":
+            ticker['symbol'] = "USDC-ETH"
+            ticker['symbolName'] = "USDC-ETH"
+        if ticker['symbol'] == "ETH-Kaiju":
+            ticker['symbol'] = "Kaiju-ETH"
+            ticker['symbolName'] = "Kaiju-ETH"
+        if ticker['symbol'] == "ETH-Switch":
+            ticker['symbol'] = "Switch-ETH"
+            ticker['symbolName'] = "Switch-ETH"
+        if ticker['symbol'] == "tBTC-ETH":
+            ticker['symbol'] = "TBTC-ETH"
+            ticker['symbolName'] = "TBTC-ETH"
+        if ticker['symbol'] == "ETH-whales":
+            ticker['symbol'] = "whales-ETH"
+            ticker['symbolName'] = "whales-ETH"
+    
+    final_ticker_info = final_ticker_infovrsc + final_ticker_infodai + final_ticker_infoeth
     return {
         "code": "200000",
         "data": {
