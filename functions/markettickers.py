@@ -2,7 +2,7 @@ import numpy as np
 from functions.getvrscreservesfrmbaskets import getvrscreserves_frombaskets
 from functions.getvolinfo import getcurrencyvolumeinfo
 
-def getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_infodai, ticker_infoeth, excluded_pairs):
+def getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_infodai, ticker_infoeth, ticker_infomkr, ticker_infotbtc, excluded_pairs):
     for basket in baskets:
         volume_info, currencyvolume = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "VRSC")
         if volume_info is not None:
@@ -89,6 +89,9 @@ def getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_inf
                 if pair['currency'] == "Bridge.vETH" or pair['convertto'] == "Bridge.vETH":
                     currency = pair['currency']
                     convertto = pair['convertto']
+                elif pair['currency'] == "NATI.vETH" or pair['convertto'] == "NATI.vETH":
+                    currency = pair['currency']
+                    convertto = pair['convertto']
                 else:
                     currency = pair['currency'].replace(".vETH", "").lstrip('v')
                     convertto = pair['convertto'].replace(".vETH", "").lstrip('v')
@@ -165,6 +168,9 @@ def getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_inf
                 if pair['currency'] == "Bridge.vETH" or pair['convertto'] == "Bridge.vETH":
                     currency = pair['currency']
                     convertto = pair['convertto']
+                elif pair['currency'] == "NATI.vETH" or pair['convertto'] == "NATI.vETH":
+                    currency = pair['currency']
+                    convertto = pair['convertto']
                 else:
                     currency = pair['currency'].replace(".vETH", "").lstrip('v')
                     convertto = pair['convertto'].replace(".vETH", "").lstrip('v')
@@ -234,7 +240,174 @@ def getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_inf
             combined_ticker_infoeth[symbol] = ticker
 
 
+    for basket in baskets:
+        mkrvolume_info, mkrcurrencyvolume = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "MKR.vETH")
+        if mkrvolume_info is not None:
+            for pair in mkrvolume_info:
+                # Remove .vETH suffix and 'v' prefix from currency names
+                if pair['currency'] == "Bridge.vETH" or pair['convertto'] == "Bridge.vETH":
+                    currency = pair['currency']
+                    convertto = pair['convertto']
+                elif pair['currency'] == "NATI.vETH" or pair['convertto'] == "NATI.vETH":
+                    currency = pair['currency']
+                    convertto = pair['convertto']
+                else:
+                    currency = pair['currency'].replace(".vETH", "").lstrip('v')
+                    convertto = pair['convertto'].replace(".vETH", "").lstrip('v')
+                if currency == "MKR" or convertto == "MKR":
+                    # Reverse currency and convertto in the pair
+                    if currency == "Bridge.vETH" or convertto == "Bridge.vETH":
+                        currency_pair = f"Bridge.vETH-MKR" if currency == "Bridge.vETH" else f"{convertto}-MKR"
+                    else:
+                        currency_pair = f"{convertto}-{currency}"
+                    # Calculate weights based on volume
+                    if currency_pair in excluded_pairs:
+                        continue
+                    weights = pair['volume'] / np.sum(pair['volume'])
+                    # Invert values if VRSC is the quote currency (second position)
+                    if convertto == "MKR":
+                        volume = pair['volume']
+                        last = np.dot(weights, 1 / pair['close']) / np.sum(weights)
+                        high = np.dot(weights, 1 / pair['high']) / np.sum(weights)
+                        low = np.dot(weights, 1 / pair['low']) / np.sum(weights)
+                        openn = np.dot(weights, 1 / pair['open']) / np.sum(weights)
+                    else:
+                        volume = pair['volume']
+                        last = np.dot(weights, pair['close']) / np.sum(weights)
+                        high = np.dot(weights, pair['high']) / np.sum(weights)
+                        low = np.dot(weights, pair['low']) / np.sum(weights)
+                        openn = np.dot(weights, pair['open']) / np.sum(weights)
+                    ticker_infomkr.append({
+                        'symbol': currency_pair,
+                        'symbolName': currency_pair,
+                        'volume': volume,
+                        'last': last,
+                        'high': high,
+                        'low': low,
+                        'open': openn
+                    })
+        
+    # Combine reverse pairs
+    combined_ticker_infomkr = {}
+    for ticker in ticker_infomkr:
+        symbol = ticker['symbol']
+        reverse_symbol = "-".join(symbol.split("-")[::-1])
+        if symbol in combined_ticker_infomkr:
+            combined_volume = combined_ticker_infomkr[symbol]['volume'] + ticker['volume']
+            combined_weights = np.array([combined_ticker_infomkr[symbol]['volume'], ticker['volume']]) / combined_volume
+            combined_ticker_infomkr[symbol]['volume'] = combined_volume
+            combined_ticker_infomkr[symbol]['last'] = np.dot(
+                [combined_ticker_infomkr[symbol]['last'], ticker['last']], combined_weights)
+            combined_ticker_infomkr[symbol]['high'] = np.dot(
+                [combined_ticker_infomkr[symbol]['high'], ticker['high']], combined_weights)
+            combined_ticker_infomkr[symbol]['low'] = np.dot(
+                [combined_ticker_infomkr[symbol]['low'], ticker['low']], combined_weights)
+            combined_ticker_infomkr[symbol]['open'] = np.dot(
+                [combined_ticker_infomkr[symbol]['open'], ticker['open']], combined_weights)
+        elif reverse_symbol in combined_ticker_infomkr:
+            combined_volume = combined_ticker_infomkr[reverse_symbol]['volume'] + ticker['volume']
+            combined_weights = np.array([combined_ticker_infomkr[reverse_symbol]['volume'], ticker['volume']]) / combined_volume
+            combined_ticker_infomkr[reverse_symbol]['volume'] = combined_volume
+            combined_ticker_infomkr[reverse_symbol]['last'] = np.dot(
+                [combined_ticker_infomkr[reverse_symbol]['last'], ticker['last']], combined_weights)
+            combined_ticker_infomkr[reverse_symbol]['high'] = np.dot(
+                [combined_ticker_infomkr[reverse_symbol]['high'], ticker['low']], combined_weights)
+            combined_ticker_infomkr[reverse_symbol]['low'] = np.dot(
+                [combined_ticker_infomkr[reverse_symbol]['low'], ticker['high']], combined_weights)
+            combined_ticker_infomkr[reverse_symbol]['open'] = np.dot(
+                [combined_ticker_infomkr[reverse_symbol]['open'], ticker['open']], combined_weights)
+        else:
+            combined_ticker_infomkr[symbol] = ticker
+
+    for basket in baskets:
+        tbtcvolume_info, tbtccurrencyvolume = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "tBTC.vETH")
+        if tbtcvolume_info is not None:
+            for pair in tbtcvolume_info:
+                # Remove .vETH suffix and 'v' prefix from currency names
+                if pair['currency'] == "Bridge.vETH" or pair['convertto'] == "Bridge.vETH":
+                    currency = pair['currency']
+                    convertto = pair['convertto']
+                elif pair['currency'] == "NATI.vETH" or pair['convertto'] == "NATI.vETH":
+                    currency = pair['currency']
+                    convertto = pair['convertto']
+                else:
+                    currency = pair['currency'].replace(".vETH", "").lstrip('v')
+                    convertto = pair['convertto'].replace(".vETH", "").lstrip('v')
+
+                    if currency.lower() == "tbtc":
+                        currency = "TBTC"
+                    if convertto.lower() == "tbtc":
+                        convertto = "TBTC"
+
+                if currency == "TBTC" or convertto == "TBTC":
+                    # Reverse currency and convertto in the pair
+                    if currency == "Bridge.vETH" or convertto == "Bridge.vETH":
+                        currency_pair = f"Bridge.vETH-TBTC" if currency == "Bridge.vETH" else f"{convertto}-TBTC"
+                    else:
+                        currency_pair = f"{convertto}-{currency}"
+                    # Calculate weights based on volume
+                    if currency_pair in excluded_pairs:
+                        continue
+                    weights = pair['volume'] / np.sum(pair['volume'])
+                    # Invert values if VRSC is the quote currency (second position)
+                    if convertto == "TBTC":
+                        volume = pair['volume']
+                        last = np.dot(weights, 1 / pair['close']) / np.sum(weights)
+                        high = np.dot(weights, 1 / pair['high']) / np.sum(weights)
+                        low = np.dot(weights, 1 / pair['low']) / np.sum(weights)
+                        openn = np.dot(weights, 1 / pair['open']) / np.sum(weights)
+                    else:
+                        volume = pair['volume']
+                        last = np.dot(weights, pair['close']) / np.sum(weights)
+                        high = np.dot(weights, pair['high']) / np.sum(weights)
+                        low = np.dot(weights, pair['low']) / np.sum(weights)
+                        openn = np.dot(weights, pair['open']) / np.sum(weights)
+                    ticker_infotbtc.append({
+                        'symbol': currency_pair,
+                        'symbolName': currency_pair,
+                        'volume': volume,
+                        'last': last,
+                        'high': high,
+                        'low': low,
+                        'open': openn
+                    })
+        
+    # Combine reverse pairs
+    combined_ticker_infotbtc = {}
+    for ticker in ticker_infotbtc:
+        symbol = ticker['symbol']
+        reverse_symbol = "-".join(symbol.split("-")[::-1])
+        if symbol in combined_ticker_infotbtc:
+            combined_volume = combined_ticker_infotbtc[symbol]['volume'] + ticker['volume']
+            combined_weights = np.array([combined_ticker_infotbtc[symbol]['volume'], ticker['volume']]) / combined_volume
+            combined_ticker_infotbtc[symbol]['volume'] = combined_volume
+            combined_ticker_infotbtc[symbol]['last'] = np.dot(
+                [combined_ticker_infotbtc[symbol]['last'], ticker['last']], combined_weights)
+            combined_ticker_infotbtc[symbol]['high'] = np.dot(
+                [combined_ticker_infotbtc[symbol]['high'], ticker['high']], combined_weights)
+            combined_ticker_infotbtc[symbol]['low'] = np.dot(
+                [combined_ticker_infotbtc[symbol]['low'], ticker['low']], combined_weights)
+            combined_ticker_infotbtc[symbol]['open'] = np.dot(
+                [combined_ticker_infotbtc[symbol]['open'], ticker['open']], combined_weights)
+        elif reverse_symbol in combined_ticker_infotbtc:
+            combined_volume = combined_ticker_infotbtc[reverse_symbol]['volume'] + ticker['volume']
+            combined_weights = np.array([combined_ticker_infotbtc[reverse_symbol]['volume'], ticker['volume']]) / combined_volume
+            combined_ticker_infotbtc[reverse_symbol]['volume'] = combined_volume
+            combined_ticker_infotbtc[reverse_symbol]['last'] = np.dot(
+                [combined_ticker_infotbtc[reverse_symbol]['last'], ticker['last']], combined_weights)
+            combined_ticker_infotbtc[reverse_symbol]['high'] = np.dot(
+                [combined_ticker_infotbtc[reverse_symbol]['high'], ticker['low']], combined_weights)
+            combined_ticker_infotbtc[reverse_symbol]['low'] = np.dot(
+                [combined_ticker_infotbtc[reverse_symbol]['low'], ticker['high']], combined_weights)
+            combined_ticker_infotbtc[reverse_symbol]['open'] = np.dot(
+                [combined_ticker_infotbtc[reverse_symbol]['open'], ticker['open']], combined_weights)
+        else:
+            combined_ticker_infotbtc[symbol] = ticker
+
+
     final_ticker_infovrsc = list(combined_ticker_infovrsc.values())
     final_ticker_infodai = list(combined_ticker_infodai.values())
     final_ticker_infoeth = list(combined_ticker_infoeth.values())
-    return final_ticker_infovrsc, final_ticker_infodai, final_ticker_infoeth
+    final_ticker_infomkr = list(combined_ticker_infomkr.values())
+    final_ticker_infotbtc = list(combined_ticker_infotbtc.values())
+    return final_ticker_infovrsc, final_ticker_infodai, final_ticker_infoeth, final_ticker_infomkr, final_ticker_infotbtc
