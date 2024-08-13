@@ -9,7 +9,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 
 - ```/``` Returns the API is running.
     - #### Docstring
-        ```
+        ```py
         """
         The main entry point of the VerusCoin Multipurpose API.
         Returns a success message indicating that the API is running, along with the port number.
@@ -21,7 +21,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/price/<ticker>``` Returns the price of VRSC in different currencies and values along with the 24 hour change.
     - #### Docstring
-        ```
+        ```py
         """
         Returns the current price of Verus Coin in the specified currency.
         Parameters:
@@ -39,7 +39,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/difficulty``` Returns the current network difficulty and formats it into readable form.
     - #### Docstring
-        ```
+        ```py
         """
         Returns the current network difficulty and formats it into readable form.
         Parameters:
@@ -56,7 +56,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/getcurrencystate/<currency>/<height>``` Returns the currency state of bridged coins.
     - #### Docstring
-        ```
+        ```py
         """
         Retrieves the currency state for a given currency and height.
         Args:
@@ -85,7 +85,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/decoderawtransaction/<hex>``` Returns the decoded data of a raw transaction.
     - #### Docstring
-        ```
+        ```py
         """
         Decodes a raw transaction given its hexadecimal representation.
         Args:
@@ -112,7 +112,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/getrawtransaction/<txid>``` Returns the raw transaction details.
     - #### Docstring
-        ```
+        ```py
         """
         This function handles a GET request to retrieve the state of a specific currency at a given block height.
         Args:
@@ -147,7 +147,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/blockcount``` Returns the block height of verus.
     - #### Docstring
-        ```
+        ```py
         """
         Returns the latest block count from the Verus blockchain.
         Parameters:
@@ -174,7 +174,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/getticker/<currency_id>``` Returns the ticker of the given currencyID.
     - #### Docstring
-        ```
+        ```py
         """
         Returns the ticker of the given currencyID.
         Parameters:
@@ -201,7 +201,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/getcurrid/<ticker>``` Returns currencyid of a currency when ticker is provided.
     - #### Docstring
-        ```
+        ```py
         """
         Returns the currency ID associated with the provided ticker symbol.
         Parameters:
@@ -228,7 +228,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/fetchblockhash/<longest_chain>``` Returns the fetched blockhash.
     - #### Docstring
-        ```
+        ```py
         """
         Fetches the block hash for a given longest chain.
         Parameters:
@@ -243,7 +243,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/fetchtransactiondata/<transaction_id>``` Returns the transaction data of a transaction ID.
     - #### Docstring
-        ```
+        ```py
         """
         Fetches transaction data by transaction ID.
         This function sends a GET request to the '/fetchtransactiondata/{transaction_id}' endpoint,
@@ -267,7 +267,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/getmoneysupply``` Returns the money supply of VRSC.
     - #### Docstring
-        ```
+        ```py
         """
         Retrieves the current money supply from the Verus Explorer API.
         Returns:
@@ -282,7 +282,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/getrawmempool``` Returns all the unconfirmed transactions on the bridge.
     - #### Docstring
-        ```
+        ```py
         """
         This function handles a GET request to retrieve the raw mempool data.
         It sends a POST request to the RPC URL with the 'getrawmempool' method and 
@@ -300,7 +300,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/distribution``` Returns the distribution of VRSC in the network.
     - #### Docstring
-        ```
+        ```py
         """
         Retrieves the distribution of VRSC in the network.
         Returns:
@@ -320,7 +320,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/getnethashpower``` Returns the network hashrate and formats it into readable form.
     - #### Docstring
-        ```
+        ```py
         """
         Retrieves the network hash power from the Verus API.
         Returns:
@@ -333,7 +333,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/getimports/<currency>``` Returns the import details of the currency provided on the current block height.
     - #### Docstring
-        ```
+        ```py
         """
         Handles GET requests to retrieve imports for a specific currency.
         Parameters:
@@ -360,7 +360,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/getimports_blk/<currency>/<fromblock>/<toblock>``` Returns the import details of the currency from block to block.
     - #### Docstring
-        ```
+        ```py
         """
         Handles GET requests to retrieve imports with block information.
         Parameters:
@@ -389,7 +389,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/getvolume/<currencyid>/<currency>/<fromblk>/<toblk>``` Returns the total reservein and reserveout volumes of a specific currency on the bridge.
     - #### Docstring
-        ```
+        ```py
         """
         Retrieves the volume of a specific currency within a given block range.
         Args:
@@ -425,7 +425,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/gettotalvolume/<currency>/<fromblk>/<toblk>``` Returns the total reservein, reserveout, primarycurrencyin, primarycurrencyout and conversionfees of all the currencies present in the basket.
     - #### Docstring
-        ```
+        ```py
         """
         Retrieves the total volume of a given currency within a specified block range.
         Parameters:
@@ -456,7 +456,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/gettransactions/<currency>/<fromblk>/<toblk>``` Returns all the transactions of a specific basket in the given block interval.
     - #### Docstring
-        ```
+        ```py
         """
         Retrieves a list of transactions for a given currency within a specified block range.
         Args:
@@ -485,7 +485,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/getaddressbalance/<address>``` Returns the balance of the given address.
     - #### Docstring
-        ```
+        ```py
         """
         This function handles a GET request to retrieve the balance of a given address.
         Parameters:
@@ -511,7 +511,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/getbasketinfo/``` Returns all the basket currency information.
     - #### Docstring
-        ```
+        ```py
         """
         Returns a list of basket information.
         This endpoint retrieves all baskets using the `getallbaskets` function and 
@@ -575,7 +575,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         ```
 - ```/getcurrencyvolumes``` Returns the currencyvolumes as per 24 hours.
     - #### Docstring
-        ```
+        ```py
         """
         This function handles GET requests to the '/getcurrencyvolumes' endpoint. 
         It calls the calculatevolumeinfo function to retrieve currency volume information.
@@ -610,7 +610,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 
 - ```/market/allTickers``` Returns all the basket currencies as pairs with high/low/close volume information as well as the total volume information of each basket in a 24 hour period. Note that this endpoint returns the currency prices in the currency ``VRSC``. Since VRSC is in every basket, it makes more sense to standardize volumes in VRSC and all volumes are aggregated. Any basket with no transactions in 24 hour period will not show up in this API endpoint, if any listing partners want to use USD prices then they can easily convert the prices from VRSC to USD by themselves, as all the currency volume information are given out in Verus! 
     - #### Docstring
-        ```
+        ```py
         """
         This function handles the GET request to the '/market/allTickers' endpoint.
         It retrieves all baskets, the latest block number, and calculates the volume block number.
@@ -681,7 +681,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 
 - ```/gettvl``` Returns the Total Value Locked on the network (not being used ATM by any platforms).
     - #### Docstring
-        ```
+        ```py
         """
         This function handles a GET request to retrieve the total value locked (TVL) in the network.
         It fetches the baskets and their corresponding i_addresses, then processes each basket to 
@@ -831,7 +831,7 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
 
 - ```/getdefichaininfo``` Returns all the baskets in the network along with their currencyids, currencies inside the basket and their currencyids with their reserve and priceinreserves. 
     - #### Docstring
-        ```
+        ```py
         """
         Retrieves DeFiChain information.
         This function fetches the latest DeFiChain data, processes it, and returns the results.
