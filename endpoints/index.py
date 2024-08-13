@@ -281,8 +281,10 @@ def routegetalltickers():
     ticker_infovrsc = []
     ticker_infoeth = []
     ticker_infodai = []
-    excluded_pairs = ["DAI-VRSC", "VRSC-DAI", "DAI-ETH", "ETH-DAI", "VRSC-ETH", "ETH-VRSC"]
-    final_ticker_infovrsc, final_ticker_infodai, final_ticker_infoeth = getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_infodai, ticker_infoeth, excluded_pairs)
+    ticker_infomkr = []
+    ticker_infotbtc = []
+    excluded_pairs = ["DAI-VRSC", "VRSC-DAI", "DAI-ETH", "ETH-DAI", "VRSC-ETH", "ETH-VRSC", "VRSC-MKR", "MKR-VRSC", "MKR-DAI", "DAI-MKR", "ETH-MKR", "MKR-ETH", "VRSC-TBTC", "TBTC-VRSC", "TBTC-DAI", "DAI-TBTC", "ETH-TBTC", "TBTC-ETH", "TBTC-MKR", "MKR-TBTC"]
+    final_ticker_infovrsc, final_ticker_infodai, final_ticker_infoeth, final_ticker_infomkr, final_ticker_infotbtc = getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_infodai, ticker_infoeth, ticker_infomkr, ticker_infotbtc, excluded_pairs)
     for ticker in final_ticker_infovrsc:
         if ticker['symbol'] == "VRSC-MKR":
             ticker['symbol'] = "MKR-VRSC"
@@ -363,8 +365,54 @@ def routegetalltickers():
         if ticker['symbol'] == "ETH-whales":
             ticker['symbol'] = "whales-ETH"
             ticker['symbolName'] = "whales-ETH"
+
+    for ticker in final_ticker_infomkr:
+        if ticker['symbol'] == "MKR-EURC":
+            ticker['symbol'] = "EURC-MKR"
+            ticker['symbolName'] = "EURC-MKR"
+        if ticker['symbol'] == "MKR-ETH":
+            ticker['symbol'] = "ETH-MKR"
+            ticker['symbolName'] = "ETH-MKR"
+        if ticker['symbol'] == "MKR-USDC":
+            ticker['symbol'] = "USDC-MKR"
+            ticker['symbolName'] = "USDC-MKR"
+        if ticker['symbol'] == "MKR-Kaiju":
+            ticker['symbol'] = "Kaiju-MKR"
+            ticker['symbolName'] = "Kaiju-MKR"
+        if ticker['symbol'] == "MKR-Switch":
+            ticker['symbol'] = "Switch-MKR"
+            ticker['symbolName'] = "Switch-MKR"
+        if ticker['symbol'] == "tBTC-MKR":
+            ticker['symbol'] = "TBTC-MKR"
+            ticker['symbolName'] = "TBTC-MKR"
+        if ticker['symbol'] == "MKR-whales":
+            ticker['symbol'] = "whales-MKR"
+            ticker['symbolName'] = "whales-MKR"
+
+    for ticker in final_ticker_infotbtc:
+        if ticker['symbol'] == "TBTC-EURC":
+            ticker['symbol'] = "EURC-TBTC"
+            ticker['symbolName'] = "EURC-TBTC"
+        if ticker['symbol'] == "TBTC-ETH":
+            ticker['symbol'] = "ETH-TBTC"
+            ticker['symbolName'] = "ETH-TBTC"
+        if ticker['symbol'] == "TBTC-USDC":
+            ticker['symbol'] = "USDC-TBTC"
+            ticker['symbolName'] = "USDC-TBTC"
+        if ticker['symbol'] == "TBTC-Kaiju":
+            ticker['symbol'] = "Kaiju-TBTC"
+            ticker['symbolName'] = "Kaiju-TBTC"
+        if ticker['symbol'] == "TBTC-Switch":
+            ticker['symbol'] = "Switch-TBTC"
+            ticker['symbolName'] = "Switch-TBTC"
+        if ticker['symbol'] == "TBTC-MKR":
+            ticker['symbol'] = "MKR-TBTC"
+            ticker['symbolName'] = "MKR-TBTC"
+        if ticker['symbol'] == "TBTC-whales":
+            ticker['symbol'] = "whales-TBTC"
+            ticker['symbolName'] = "whales-TBTC"
     
-    final_ticker_info = final_ticker_infovrsc + final_ticker_infodai + final_ticker_infoeth
+    final_ticker_info = final_ticker_infovrsc + final_ticker_infodai + final_ticker_infoeth + final_ticker_infomkr + final_ticker_infotbtc
     return {
         "code": "200000",
         "data": {
