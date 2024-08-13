@@ -612,17 +612,20 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
     - #### Docstring
         ```py
         """
-        This function handles the GET request to the '/market/allTickers' endpoint.
-        It retrieves all baskets, the latest block number, and calculates the volume block number.
-        Then, it iterates over each basket to get the currency volume information, 
-        calculates the weighted reserves, and combines the ticker information.
-        The function returns a dictionary containing the code, data, and timestamp.
-        The data includes a list of ticker information, each containing the symbol, 
-        symbol name, volume, last price, high price, low price, and open price.
+        This function handles the '/market/allTickers' endpoint, 
+        gathering and processing market data for various ticker symbols.
+        It retrieves the latest block number, calculates the volume block number, 
+        and fetches market tickers for different baskets. The function then 
+        processes the tickers, adjusting their symbols and names as needed, 
+        and combines them into a single list.
+        The function returns a dictionary containing the timestamp and the 
+        processed ticker information.
         Parameters:
         None
         Returns:
-        dict: A dictionary containing the code, data, and timestamp.
+        dict: A dictionary with a 'code' key and a 'data' key. The 'data' key 
+            contains a dictionary with 'time' and 'ticker' keys, where 'time' 
+            is the timestamp and 'ticker' is the list of processed tickers.
         """
 
         """
@@ -638,45 +641,46 @@ This is a Multipurpose VerusCoin API is created to provide the information of th
         """
 
         """
-        Retrieves currency volume information based on the provided parameters.
-        Args:
-            currency (str): The currency to retrieve volume information for.
-            fromblock (int): The starting block number for the volume information.
-            endblock (int): The ending block number for the volume information.
-            interval (str): The interval for the volume information.
-            volumecurrency (str): The currency to use for the volume information.
-        Returns:
-            tuple: A tuple containing the volume pairs and the volume for the specified interval.
-        """
-
-        """
-        Retrieves the reserves from a given basket.
+        This function is used to retrieve market ticker information for a given set of baskets.
         Parameters:
-        basket (str): The name of the basket to retrieve reserves from.
+        baskets (list): A list of baskets to retrieve market ticker information for.
+        volblock (int): The volume block to use for retrieving market ticker information.
+        latestblock (int): The latest block to use for retrieving market ticker information.
+        ticker_infovrsc (list): A list to store the retrieved market ticker information for VRSC.
+        ticker_infodai (list): A list to store the retrieved market ticker information for DAI.
+        ticker_infoeth (list): A list to store the retrieved market ticker information for ETH.
+        ticker_infomkr (list): A list to store the retrieved market ticker information for MKR.
+        ticker_infotbtc (list): A list to store the retrieved market ticker information for TBTC.
+        excluded_pairs (list): A list of pairs to exclude from the retrieved market ticker information.
         Returns:
-        int: The reserves of the given basket.
+        tuple: A tuple containing the retrieved market ticker information for VRSC, DAI, ETH, MKR, and TBTC.
         """
         ```
       #### Code explanation
         ```
-        This is a Python function that appears to be part of a larger API. The function is named `routegetalltickers` and is decorated with `@app.get('/market/allTickers')`, indicating that it handles GET requests to the `/market/allTickers` endpoint.
+        This is a Python function that appears to be part of a web application, specifically a route handler for the `/market/allTickers` endpoint. The function retrieves and processes market ticker data for various cryptocurrencies and returns the data in a JSON response.
+        Here's a high-level overview of what the function does:
+        1. It retrieves the latest block number and calculates a timestamp.
+        2. It calls the `getallbaskets()` function to retrieve a list of baskets (not shown in the code snippet).
+        3. It calls the `getmarkettickers()` function to retrieve market ticker data for various cryptocurrencies, passing in the baskets, block numbers, and other parameters.
+        4. It processes the retrieved ticker data by iterating over each ticker and modifying its symbol and symbol name if necessary.
+        5. It combines the processed ticker data into a single list.
+        6. It returns a JSON response with a code, timestamp, and the combined ticker data.
+        The function appears to be designed to handle a large amount of data and perform various data transformations and filtering operations. However, without more context or information about the surrounding codebase, it's difficult to provide a more detailed explanation.
 
-        The function's purpose is to retrieve and process market data for various cryptocurrency pairs, specifically those involving the VRSC token. Here's a high-level overview of what the function does:
+        This code snippet defines a function called `getmarkettickers` that takes several parameters: `baskets`, `volblock`, `latestblock`, `ticker_infovrsc`, `ticker_infodai`, `ticker_infoeth`, `ticker_infomkr`, `ticker_infotbtc`, and `excluded_pairs`. 
 
-        1. It retrieves a list of "baskets" ( likely a collection of cryptocurrency pairs) and the latest block number from an external source.
-        2. It calculates the volume of each pair over a specific time period (1440 blocks) and retrieves additional data, such as weights and reserves.
-        3. It processes the data for each pair, calculating metrics like last price, high, low, and open, and combines the data into a single structure.
-        4. It flips the order of certain pairs (e.g., VRSC-MKR to MKR-VRSC) to ensure consistency.
-        5. Finally, it returns a JSON response containing the processed data, including a timestamp and a list of ticker information for each pair.
+        The function iterates over each `basket` in `baskets` and performs the following steps:
+        1. Calls the `getcurrencyvolumeinfo` function with the `basket`, `volblock`, `latestblock`, `1440`, and `"VRSC"` as arguments. If the returned `volume_info` is not `None`, it iterates over each `pair` in `volume_info`.
+        2. Checks if the currency or convertto in the pair is "VRSC" or "DAI" or "ETH" or "MKR" or "TBTC". If so, it removes the ".vETH" suffix and 'v' prefix from the currency names.
+        3. If the currency or convertto is one of the specified currencies, it calculates weights based on the volume of the pair.
+        4. It then calculates the last, high, low, and open values based on the weights and the corresponding values in the pair.
+        5. It appends a dictionary containing the symbol, symbolName, volume, last, high, low, and open values to the `ticker_infovrsc`, `ticker_infodai`, `ticker_infoeth`, `ticker_infomkr`, or `ticker_infotbtc` list, depending on the currency.
+        6. After processing all the pairs for each basket, it combines the reverse pairs by summing the volumes and calculating the combined values based on the weights.
+        7. Finally, it returns the combined values as lists for each ticker type (vrsc, dai, eth, mkr, tbtc).
+        The purpose of this code snippet seems to be to retrieve market ticker information for various currencies based on their volume and calculate combined values for reverse pairs.
 
-        This function, `getallbaskets()`, sends a POST request to the URL specified by `RPCURL` with a JSON payload containing the method `getcurrencyconverters` and parameter `VRSC`. It then parses the response, extracting fully qualified names and i-strings from the result, and returns them as two separate lists. If the response format is unexpected, it prints an error message and returns two empty lists.
-
-        This is a Python function named `latest_block` that sends a POST request to a URL (`RPCURL`) to retrieve the latest block information. The request is sent with a JSON payload containing the method "getinfo" and an ID of 3. If the request is successful, it returns the latest block data. If an error occurs, it returns an error message.
-
-        This function sends a POST request to retrieve currency volume information. It takes in parameters such as `currency`, `fromblock`, `endblock`, `interval`, and `volumecurrency`, and returns two values: `volumepairs` and `volumethisinterval`, or `None` if the response is invalid.
-        The request is sent to the URL specified by `RPCURL` with a JSON payload containing the `getcurrencystate` method and parameters. The function then attempts to parse the response and extract the required data. If the response is missing expected keys, it returns `None` for the corresponding values.
-
-        This function, `getvrscreserves_frombaskets`, sends a POST request to a URL (`RPCURL`) with a payload containing a `basket` parameter. It then processes the response data, aggregating various values related to currency reserves, and returns the first reserve value.
+        This function sends a POST request to the URL specified by `RPCURL` with a JSON payload to retrieve currency volume information. It then attempts to parse the response to extract volume pairs and volume for a specific interval, returning these values if they exist, or `None` otherwise.
         ```
 
 - ```/gettvl``` Returns the Total Value Locked on the network (not being used ATM by any platforms).
