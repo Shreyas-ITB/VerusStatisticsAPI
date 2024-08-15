@@ -27,6 +27,7 @@ from functions.getcurrencyprices import *
 from functions.getdaivalue import get_dai_value
 from functions.getdefichain import getdefichain
 from functions.getethbalance import get_eth_balance
+from functions.savecachedata import cacheinfo
 
 app = FastAPI()
 
@@ -310,6 +311,9 @@ def routegetalltickers():
         if ticker['symbol'] == "VRSC-whales":
             ticker['symbol'] = "whales-VRSC"
             ticker['symbolName'] = "whales-VRSC"
+        if ticker['symbol'] == "NATI-VRSC":
+            ticker['symbol'] = "NATI.Basket-VRSC"
+            ticker['symbolName'] = "NATI.Basket-VRSC"
 
     for ticker in final_ticker_infodai:
         if ticker['symbol'] == "DAI-MKR":
@@ -339,6 +343,9 @@ def routegetalltickers():
         if ticker['symbol'] == "DAI-whales":
             ticker['symbol'] = "whales-DAI"
             ticker['symbolName'] = "whales-DAI"
+        if ticker['symbol'] == "NATI-DAI":
+            ticker['symbol'] = "NATI.Basket-DAI"
+            ticker['symbolName'] = "NATI.Basket-DAI"
 
     for ticker in final_ticker_infoeth:
         if ticker['symbol'] == "ETH-MKR":
@@ -365,6 +372,9 @@ def routegetalltickers():
         if ticker['symbol'] == "ETH-whales":
             ticker['symbol'] = "whales-ETH"
             ticker['symbolName'] = "whales-ETH"
+        if ticker['symbol'] == "NATI-ETH":
+            ticker['symbol'] = "NATI.Basket-ETH"
+            ticker['symbolName'] = "NATI.Basket-ETH"
 
     for ticker in final_ticker_infomkr:
         if ticker['symbol'] == "MKR-EURC":
@@ -388,6 +398,9 @@ def routegetalltickers():
         if ticker['symbol'] == "MKR-whales":
             ticker['symbol'] = "whales-MKR"
             ticker['symbolName'] = "whales-MKR"
+        if ticker['symbol'] == "NATI-MKR":
+            ticker['symbol'] = "NATI.Basket-MKR"
+            ticker['symbolName'] = "NATI.Basket-MKR"
 
     for ticker in final_ticker_infotbtc:
         if ticker['symbol'] == "TBTC-EURC":
@@ -411,13 +424,17 @@ def routegetalltickers():
         if ticker['symbol'] == "TBTC-whales":
             ticker['symbol'] = "whales-TBTC"
             ticker['symbolName'] = "whales-TBTC"
+        if ticker['symbol'] == "NATI-TBTC":
+            ticker['symbol'] = "NATI.Basket-TBTC"
+            ticker['symbolName'] = "NATI.Basket-TBTC"
     
     final_ticker_info = final_ticker_infovrsc + final_ticker_infodai + final_ticker_infoeth + final_ticker_infomkr + final_ticker_infotbtc
+    cache = cacheinfo(final_ticker_info)
     return {
         "code": "200000",
         "data": {
             "time": timestamp,
-            "ticker": final_ticker_info
+            "ticker": cache
         }
     }
 
