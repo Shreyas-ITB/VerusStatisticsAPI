@@ -7,8 +7,13 @@ def cacheinfo(data, filename="cachedmarketdata.json"):
         os.makedirs(folder)
     filepath = os.path.join(folder, filename)
     if data:
+        modified_data = []
+        for item in data:
+            modified_item = item.copy()
+            modified_item["volume"] = 0
+            modified_data.append(modified_item)
         with open(filepath, 'w') as f:
-            json.dump(data, f)
+            json.dump(modified_data, f)
         return data
     else:
         if os.path.exists(filepath):
