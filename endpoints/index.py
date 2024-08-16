@@ -314,6 +314,9 @@ def routegetalltickers():
         if ticker['symbol'] == "NATI-VRSC":
             ticker['symbol'] = "NATI.Basket-VRSC"
             ticker['symbolName'] = "NATI.Basket-VRSC"
+        if ticker['symbol'] == "VRSC-Pure":
+            ticker['symbol'] = "Pure-VRSC"
+            ticker['symbolName'] = "Pure-VRSC"
 
     for ticker in final_ticker_infodai:
         if ticker['symbol'] == "DAI-MKR":
@@ -346,6 +349,9 @@ def routegetalltickers():
         if ticker['symbol'] == "NATI-DAI":
             ticker['symbol'] = "NATI.Basket-DAI"
             ticker['symbolName'] = "NATI.Basket-DAI"
+        if ticker['symbol'] == "DAI-Pure":
+            ticker['symbol'] = "Pure-DAI"
+            ticker['symbolName'] = "Pure-DAI"
 
     for ticker in final_ticker_infoeth:
         if ticker['symbol'] == "ETH-MKR":
@@ -375,6 +381,9 @@ def routegetalltickers():
         if ticker['symbol'] == "NATI-ETH":
             ticker['symbol'] = "NATI.Basket-ETH"
             ticker['symbolName'] = "NATI.Basket-ETH"
+        if ticker['symbol'] == "ETH-Pure":
+            ticker['symbol'] = "Pure-ETH"
+            ticker['symbolName'] = "Pure-ETH"
 
     for ticker in final_ticker_infomkr:
         if ticker['symbol'] == "MKR-EURC":
@@ -401,6 +410,9 @@ def routegetalltickers():
         if ticker['symbol'] == "NATI-MKR":
             ticker['symbol'] = "NATI.Basket-MKR"
             ticker['symbolName'] = "NATI.Basket-MKR"
+        if ticker['symbol'] == "MKR-Pure":
+            ticker['symbol'] = "Pure-MKR"
+            ticker['symbolName'] = "Pure-MKR"
 
     for ticker in final_ticker_infotbtc:
         if ticker['symbol'] == "TBTC-EURC":
@@ -427,6 +439,9 @@ def routegetalltickers():
         if ticker['symbol'] == "NATI-TBTC":
             ticker['symbol'] = "NATI.Basket-TBTC"
             ticker['symbolName'] = "NATI.Basket-TBTC"
+        if ticker['symbol'] == "TBTC-Pure":
+            ticker['symbol'] = "Pure-TBTC"
+            ticker['symbolName'] = "Pure-TBTC"
     
     final_ticker_info = final_ticker_infovrsc + final_ticker_infodai + final_ticker_infoeth + final_ticker_infomkr + final_ticker_infotbtc
     cache = cacheinfo(final_ticker_info)
