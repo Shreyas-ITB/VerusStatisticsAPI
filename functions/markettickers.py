@@ -1,8 +1,7 @@
 import numpy as np
-from functions.getvrscreservesfrmbaskets import getvrscreserves_frombaskets
 from functions.getvolinfo import getcurrencyvolumeinfo
 
-def getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_infodai, ticker_infoeth, ticker_infomkr, ticker_infotbtc, excluded_pairs):
+def getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_infodai, ticker_infoeth, ticker_infomkr, ticker_infotbtc):
     for basket in baskets:
         volume_info, currencyvolume = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "VRSC")
         if volume_info is not None:
@@ -101,9 +100,6 @@ def getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_inf
                         currency_pair = f"Bridge.vETH-DAI" if currency == "Bridge.vETH" else f"{convertto}-DAI"
                     else:
                         currency_pair = f"{convertto}-{currency}"
-                    # Calculate weights based on volume
-                    if currency_pair in excluded_pairs:
-                        continue
                     weights = pair['volume'] / np.sum(pair['volume'])
                     # Invert values if VRSC is the quote currency (second position)
                     if convertto == "DAI":
@@ -180,9 +176,6 @@ def getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_inf
                         currency_pair = f"Bridge.vETH-ETH" if currency == "Bridge.vETH" else f"{convertto}-ETH"
                     else:
                         currency_pair = f"{convertto}-{currency}"
-                    # Calculate weights based on volume
-                    if currency_pair in excluded_pairs:
-                        continue
                     weights = pair['volume'] / np.sum(pair['volume'])
                     # Invert values if VRSC is the quote currency (second position)
                     if convertto == "ETH":
@@ -260,9 +253,6 @@ def getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_inf
                         currency_pair = f"Bridge.vETH-MKR" if currency == "Bridge.vETH" else f"{convertto}-MKR"
                     else:
                         currency_pair = f"{convertto}-{currency}"
-                    # Calculate weights based on volume
-                    if currency_pair in excluded_pairs:
-                        continue
                     weights = pair['volume'] / np.sum(pair['volume'])
                     # Invert values if VRSC is the quote currency (second position)
                     if convertto == "MKR":
@@ -345,9 +335,6 @@ def getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_inf
                         currency_pair = f"Bridge.vETH-TBTC" if currency == "Bridge.vETH" else f"{convertto}-TBTC"
                     else:
                         currency_pair = f"{convertto}-{currency}"
-                    # Calculate weights based on volume
-                    if currency_pair in excluded_pairs:
-                        continue
                     weights = pair['volume'] / np.sum(pair['volume'])
                     # Invert values if VRSC is the quote currency (second position)
                     if convertto == "TBTC":
