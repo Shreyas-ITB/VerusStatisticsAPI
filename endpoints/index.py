@@ -284,8 +284,7 @@ def routegetalltickers():
     ticker_infodai = []
     ticker_infomkr = []
     ticker_infotbtc = []
-    excluded_pairs = ["DAI-VRSC", "VRSC-DAI", "DAI-ETH", "ETH-DAI", "VRSC-ETH", "ETH-VRSC", "VRSC-MKR", "MKR-VRSC", "MKR-DAI", "DAI-MKR", "ETH-MKR", "MKR-ETH", "VRSC-TBTC", "TBTC-VRSC", "TBTC-DAI", "DAI-TBTC", "ETH-TBTC", "TBTC-ETH", "TBTC-MKR", "MKR-TBTC"]
-    final_ticker_infovrsc, final_ticker_infodai, final_ticker_infoeth, final_ticker_infomkr, final_ticker_infotbtc = getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_infodai, ticker_infoeth, ticker_infomkr, ticker_infotbtc, excluded_pairs)
+    final_ticker_infovrsc, final_ticker_infodai, final_ticker_infoeth, final_ticker_infomkr, final_ticker_infotbtc = getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_infodai, ticker_infoeth, ticker_infomkr, ticker_infotbtc)
     for ticker in final_ticker_infovrsc:
         if ticker['symbol'] == "VRSC-MKR":
             ticker['symbol'] = "MKR-VRSC"
@@ -352,6 +351,9 @@ def routegetalltickers():
         if ticker['symbol'] == "DAI-Pure":
             ticker['symbol'] = "Pure-DAI"
             ticker['symbolName'] = "Pure-DAI"
+        if ticker['symbol'] == "DAI-VRSC":
+            ticker['symbol'] = "VRSC-DAI"
+            ticker['symbolName'] = "VRSC-DAI"
 
     for ticker in final_ticker_infoeth:
         if ticker['symbol'] == "ETH-MKR":
@@ -384,6 +386,9 @@ def routegetalltickers():
         if ticker['symbol'] == "ETH-Pure":
             ticker['symbol'] = "Pure-ETH"
             ticker['symbolName'] = "Pure-ETH"
+        if ticker['symbol'] == "ETH-VRSC":
+            ticker['symbol'] = "VRSC-ETH"
+            ticker['symbolName'] = "VRSC-ETH"
 
     for ticker in final_ticker_infomkr:
         if ticker['symbol'] == "MKR-EURC":
@@ -413,6 +418,9 @@ def routegetalltickers():
         if ticker['symbol'] == "MKR-Pure":
             ticker['symbol'] = "Pure-MKR"
             ticker['symbolName'] = "Pure-MKR"
+        if ticker['symbol'] == "MKR-VRSC":
+            ticker['symbol'] = "VRSC-MKR"
+            ticker['symbolName'] = "VRSC-MKR"
 
     for ticker in final_ticker_infotbtc:
         if ticker['symbol'] == "TBTC-EURC":
@@ -442,6 +450,9 @@ def routegetalltickers():
         if ticker['symbol'] == "TBTC-Pure":
             ticker['symbol'] = "Pure-TBTC"
             ticker['symbolName'] = "Pure-TBTC"
+        if ticker['symbol'] == "TBTC-VRSC":
+            ticker['symbol'] = "VRSC-TBTC"
+            ticker['symbolName'] = "VRSC-TBTC"
     
     final_ticker_info = final_ticker_infovrsc + final_ticker_infodai + final_ticker_infoeth + final_ticker_infomkr + final_ticker_infotbtc
     cache = cacheinfo(final_ticker_info)
