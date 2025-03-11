@@ -564,3 +564,194 @@ def getdefichaininfo():
             "code": "500000",
             "message": f"An unexpected error occurred: {str(e)}"
         }
+
+@app.get('/market/allTickers/new')
+def routegetalltickers():
+    baskets, i_addresses = getallbaskets()
+    latestblock = latest_block()
+    volblock = int(latestblock) - 1440
+    timestamp = int(time.time() * 1000)
+    ticker_infovrsc = []
+    ticker_infoeth = []
+    ticker_infodai = []
+    ticker_infomkr = []
+    ticker_infotbtc = []
+    final_ticker_infovrsc, final_ticker_infodai, final_ticker_infoeth, final_ticker_infomkr, final_ticker_infotbtc = getmarkettickersnew(baskets, volblock, latestblock, ticker_infovrsc, ticker_infodai, ticker_infoeth, ticker_infomkr, ticker_infotbtc)
+    for ticker in final_ticker_infovrsc:
+        if ticker['ticker_id'] == "VRSC_MKR":
+            ticker['ticker_id'] = "MKR_VRSC"
+            ticker['symbolName'] = "MKR_VRSC"
+        if ticker['ticker_id'] == "VRSC_USDT":
+            ticker['ticker_id'] = "USDT_VRSC"
+            ticker['symbolName'] = "USDT_VRSC"
+        if ticker['ticker_id'] == "VRSC_EURC":
+            ticker['ticker_id'] = "EURC_VRSC"
+            ticker['symbolName'] = "EURC_VRSC"
+        if ticker['ticker_id'] == "VRSC_USDC":
+            ticker['ticker_id'] = "USDC_VRSC"
+            ticker['symbolName'] = "USDC_VRSC"
+        if ticker['ticker_id'] == "VRSC_Kaiju":
+            ticker['ticker_id'] = "Kaiju_VRSC"
+            ticker['symbolName'] = "Kaiju_VRSC"
+        if ticker['ticker_id'] == "VRSC_Switch":
+            ticker['ticker_id'] = "Switch_VRSC"
+            ticker['symbolName'] = "Switch_VRSC"
+        if ticker['ticker_id'] == "tBTC_VRSC":
+            ticker['ticker_id'] = "TBTC_VRSC"
+            ticker['symbolName'] = "TBTC_VRSC"
+        if ticker['ticker_id'] == "VRSC_whales":
+            ticker['ticker_id'] = "whales_VRSC"
+            ticker['symbolName'] = "whales_VRSC"
+        if ticker['ticker_id'] == "NATI_VRSC":
+            ticker['ticker_id'] = "NATI.Basket_VRSC"
+            ticker['symbolName'] = "NATI.Basket_VRSC"
+        if ticker['ticker_id'] == "VRSC_Pure":
+            ticker['ticker_id'] = "Pure_VRSC"
+            ticker['symbolName'] = "Pure_VRSC"
+
+    for ticker in final_ticker_infodai:
+        if ticker['ticker_id'] == "DAI_MKR":
+            ticker['ticker_id'] = "MKR_DAI"
+            ticker['symbolName'] = "MKR_DAI"
+        if ticker['ticker_id'] == "DAI_USDT":
+            ticker['ticker_id'] = "USDT_DAI"
+            ticker['symbolName'] = "USDT_DAI"
+        if ticker['ticker_id'] == "DAI_EURC":
+            ticker['ticker_id'] = "EURC_DAI"
+            ticker['symbolName'] = "EURC_DAI"
+        if ticker['ticker_id'] == "DAI_ETH":
+            ticker['ticker_id'] = "ETH_DAI"
+            ticker['symbolName'] = "ETH_DAI"
+        if ticker['ticker_id'] == "DAI_USDC":
+            ticker['ticker_id'] = "USDC_DAI"
+            ticker['symbolName'] = "USDC_DAI"
+        if ticker['ticker_id'] == "DAI_Kaiju":
+            ticker['ticker_id'] = "Kaiju_DAI"
+            ticker['symbolName'] = "Kaiju_DAI"
+        if ticker['ticker_id'] == "DAI_Switch":
+            ticker['ticker_id'] = "Switch_DAI"
+            ticker['symbolName'] = "Switch_DAI"
+        if ticker['ticker_id'] == "tBTC_DAI":
+            ticker['ticker_id'] = "TBTC_DAI"
+            ticker['symbolName'] = "TBTC_DAI"
+        if ticker['ticker_id'] == "DAI_whales":
+            ticker['ticker_id'] = "whales_DAI"
+            ticker['symbolName'] = "whales_DAI"
+        if ticker['ticker_id'] == "NATI_DAI":
+            ticker['ticker_id'] = "NATI.Basket_DAI"
+            ticker['symbolName'] = "NATI.Basket_DAI"
+        if ticker['ticker_id'] == "DAI_Pure":
+            ticker['ticker_id'] = "Pure_DAI"
+            ticker['symbolName'] = "Pure_DAI"
+        if ticker['ticker_id'] == "DAI_VRSC":
+            ticker['ticker_id'] = "VRSC_DAI"
+            ticker['symbolName'] = "VRSC_DAI"
+
+    for ticker in final_ticker_infoeth:
+        if ticker['ticker_id'] == "ETH_MKR":
+            ticker['ticker_id'] = "MKR_ETH"
+            ticker['symbolName'] = "MKR_ETH"
+        if ticker['ticker_id'] == "ETH_USDT":
+            ticker['ticker_id'] = "USDT_ETH"
+            ticker['symbolName'] = "USDT_ETH"
+        if ticker['ticker_id'] == "ETH_EURC":
+            ticker['ticker_id'] = "EURC_ETH"
+            ticker['symbolName'] = "EURC_ETH"
+        if ticker['ticker_id'] == "ETH_USDC":
+            ticker['ticker_id'] = "USDC_ETH"
+            ticker['symbolName'] = "USDC_ETH"
+        if ticker['ticker_id'] == "ETH_Kaiju":
+            ticker['ticker_id'] = "Kaiju_ETH"
+            ticker['symbolName'] = "Kaiju_ETH"
+        if ticker['ticker_id'] == "ETH_Switch":
+            ticker['ticker_id'] = "Switch_ETH"
+            ticker['symbolName'] = "Switch_ETH"
+        if ticker['ticker_id'] == "tBTC_ETH":
+            ticker['ticker_id'] = "TBTC_ETH"
+            ticker['symbolName'] = "TBTC_ETH"
+        if ticker['ticker_id'] == "ETH_whales":
+            ticker['ticker_id'] = "whales_ETH"
+            ticker['symbolName'] = "whales_ETH"
+        if ticker['ticker_id'] == "NATI_ETH":
+            ticker['ticker_id'] = "NATI.Basket_ETH"
+            ticker['symbolName'] = "NATI.Basket_ETH"
+        if ticker['ticker_id'] == "ETH_Pure":
+            ticker['ticker_id'] = "Pure_ETH"
+            ticker['symbolName'] = "Pure_ETH"
+        if ticker['ticker_id'] == "ETH_VRSC":
+            ticker['ticker_id'] = "VRSC_ETH"
+            ticker['symbolName'] = "VRSC_ETH"
+
+    for ticker in final_ticker_infomkr:
+        if ticker['ticker_id'] == "MKR_EURC":
+            ticker['ticker_id'] = "EURC_MKR"
+            ticker['symbolName'] = "EURC_MKR"
+        if ticker['ticker_id'] == "MKR_ETH":
+            ticker['ticker_id'] = "ETH_MKR"
+            ticker['symbolName'] = "ETH_MKR"
+        if ticker['ticker_id'] == "MKR_USDC":
+            ticker['ticker_id'] = "USDC_MKR"
+            ticker['symbolName'] = "USDC_MKR"
+        if ticker['ticker_id'] == "MKR_Kaiju":
+            ticker['ticker_id'] = "Kaiju_MKR"
+            ticker['symbolName'] = "Kaiju_MKR"
+        if ticker['ticker_id'] == "MKR_Switch":
+            ticker['ticker_id'] = "Switch_MKR"
+            ticker['symbolName'] = "Switch_MKR"
+        if ticker['ticker_id'] == "tBTC_MKR":
+            ticker['ticker_id'] = "TBTC_MKR"
+            ticker['symbolName'] = "TBTC_MKR"
+        if ticker['ticker_id'] == "MKR_whales":
+            ticker['ticker_id'] = "whales_MKR"
+            ticker['symbolName'] = "whales_MKR"
+        if ticker['ticker_id'] == "NATI_MKR":
+            ticker['ticker_id'] = "NATI.Basket_MKR"
+            ticker['symbolName'] = "NATI.Basket_MKR"
+        if ticker['ticker_id'] == "MKR_Pure":
+            ticker['ticker_id'] = "Pure_MKR"
+            ticker['symbolName'] = "Pure_MKR"
+        if ticker['ticker_id'] == "MKR_VRSC":
+            ticker['ticker_id'] = "VRSC_MKR"
+            ticker['symbolName'] = "VRSC_MKR"
+
+    for ticker in final_ticker_infotbtc:
+        if ticker['ticker_id'] == "TBTC_EURC":
+            ticker['ticker_id'] = "EURC_TBTC"
+            ticker['symbolName'] = "EURC_TBTC"
+        if ticker['ticker_id'] == "TBTC_ETH":
+            ticker['ticker_id'] = "ETH_TBTC"
+            ticker['symbolName'] = "ETH_TBTC"
+        if ticker['ticker_id'] == "TBTC_USDC":
+            ticker['ticker_id'] = "USDC_TBTC"
+            ticker['symbolName'] = "USDC_TBTC"
+        if ticker['ticker_id'] == "TBTC_Kaiju":
+            ticker['ticker_id'] = "Kaiju_TBTC"
+            ticker['symbolName'] = "Kaiju_TBTC"
+        if ticker['ticker_id'] == "TBTC_Switch":
+            ticker['ticker_id'] = "Switch_TBTC"
+            ticker['symbolName'] = "Switch_TBTC"
+        if ticker['ticker_id'] == "TBTC_MKR":
+            ticker['ticker_id'] = "MKR_TBTC"
+            ticker['symbolName'] = "MKR_TBTC"
+        if ticker['ticker_id'] == "TBTC_whales":
+            ticker['ticker_id'] = "whales_TBTC"
+            ticker['symbolName'] = "whales_TBTC"
+        if ticker['ticker_id'] == "NATI_TBTC":
+            ticker['ticker_id'] = "NATI.Basket_TBTC"
+            ticker['symbolName'] = "NATI.Basket_TBTC"
+        if ticker['ticker_id'] == "TBTC_Pure":
+            ticker['ticker_id'] = "Pure_TBTC"
+            ticker['symbolName'] = "Pure_TBTC"
+        if ticker['ticker_id'] == "TBTC_VRSC":
+            ticker['ticker_id'] = "VRSC_TBTC"
+            ticker['symbolName'] = "VRSC_TBTC"
+    
+    final_ticker_info = final_ticker_infovrsc + final_ticker_infodai + final_ticker_infoeth + final_ticker_infomkr + final_ticker_infotbtc
+    cache = cacheinfonew_newendpoint(final_ticker_info)
+    return {
+        "code": "200000",
+        "data": {
+            "time": timestamp,
+            "ticker": cache
+        }
+    }
