@@ -1,5 +1,41 @@
 import numpy as np
 from functions.getvolinfo import getcurrencyvolumeinfo
+from functions.tickerfunc import get_currencyid_by_ticker
+from functions.getcurrencyconverters import calculate_liquidity
+import requests
+
+def get_crypto_price(symbol):
+    """
+    Fetches the USD price of a cryptocurrency using its ticker symbol via the CoinGecko API.
+    
+    :param symbol: The ticker symbol of the cryptocurrency (e.g., "ETH" for Ethereum, "MKR" for Maker)
+    :return: Price in USD as a float, or 0.0 if the symbol is not found
+    """
+    # CoinGecko API endpoints
+    coin_list_url = "https://api.coingecko.com/api/v3/coins/list"
+    price_url = "https://api.coingecko.com/api/v3/simple/price"
+    try:
+        # Fetch the full list of coins
+        response = requests.get(coin_list_url, timeout=10)
+        response.raise_for_status()
+        coin_list = response.json()
+
+        # Find the CoinGecko ID for the given symbol
+        coin_id = next((coin["id"] for coin in coin_list if coin["symbol"].lower() == symbol.lower()), None)
+        print(coin_id)
+
+        if not coin_id:
+            return 0.0  # Return 0.0 if symbol is not found
+
+        # Fetch the price in USD
+        response = requests.get(f"{price_url}?ids={coin_id}&vs_currencies=usd", timeout=10)
+        response.raise_for_status()
+        price_data = response.json()
+
+        return price_data.get(coin_id, {}).get("usd", 0.0)
+
+    except requests.RequestException:
+        return 0.0  # Return 0.0 if there's any request error (e.g., timeout, API failure)
 
 def getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_infodai, ticker_infoeth, ticker_infomkr, ticker_infotbtc):
     for basket in baskets:
@@ -399,21 +435,11 @@ def getmarkettickers(baskets, volblock, latestblock, ticker_infovrsc, ticker_inf
     final_ticker_infotbtc = list(combined_ticker_infotbtc.values())
     return final_ticker_infovrsc, final_ticker_infodai, final_ticker_infoeth, final_ticker_infomkr, final_ticker_infotbtc
 
+
 def getmarkettickersnew(baskets, volblock, latestblock, ticker_infovrsc, ticker_infodai, ticker_infoeth, ticker_infomkr, ticker_infotbtc):
-    price_vrsc_usd = getcurrencyvolumeinfo("Bridge.vETH", volblock, latestblock, 1440, "VRSC")
-    price_vrsc_usd = price_vrsc_usd[0]
-    # Iterating through the list to find the correct entry
-    for pair in price_vrsc_usd:
-        if pair['convertto'] == 'DAI.vETH' and pair['currency'] == 'VRSC':
-            global result
-            result = 1 / pair['close']
     for basket in baskets:
         volume_info, currencyvolume = getcurrencyvolumeinfo(basket, volblock, latestblock, 1440, "VRSC")
-        liquidity_volume = getcurrencyvolumeinfo_new("Bridge.vETH", latestblock, latestblock, 1, "VRSC", "i5w5MuNik5NtLcYmNzcvaoixooEebB6MGV")
-        print(liquidity_volume)
-        #print(volume_info)
         basket_addr_vrsc = get_currencyid_by_ticker(basket)
-        #print(basket + " basket i address - " + basket_addr_vrsc)
         if volume_info is not None:
             for pair in volume_info:
                 # Remove .vETH suffix and 'v' prefix from currency names
@@ -448,13 +474,20 @@ def getmarkettickersnew(baskets, volblock, latestblock, ticker_infovrsc, ticker_
                         low = np.dot(weights, pair['low']) / np.sum(weights)
                         openn = np.dot(weights, pair['open']) / np.sum(weights)
                     base_currency, target_currency = currency_pair.split("_")
+                    try:
+                        liquidity_value, base_currency_price, target_currency_price = calculate_liquidity(base_currency, target_currency)
+                    except TypeError:
+                        liquidity_value, base_currency_price, target_currency_price = 0, 0, 0
+                        print(f"Error: Could not calculate liquidity for {currency_pair}.")
                     ticker_infovrsc.append({
                         'ticker_id': currency_pair,
                         'base_currency': base_currency,
                         'target_currency': target_currency,                   
                         'pool_id': basket_addr_vrsc,
                         'volume': volume,
-                        'liquidity_in_usd': result * volume,
+                        'base_volume': volume * base_currency_price,
+                        'target_volume': volume * target_currency_price,
+                        'liquidity_in_usd': liquidity_value,
                         'last_price': last,
                         'high': high,
                         'low': low,
@@ -530,13 +563,20 @@ def getmarkettickersnew(baskets, volblock, latestblock, ticker_infovrsc, ticker_
                         low = np.dot(weights, pair['low']) / np.sum(weights)
                         openn = np.dot(weights, pair['open']) / np.sum(weights)
                     base_currency, target_currency = currency_pair.split("_")
+                    try:
+                        liquidity_value, base_currency_price, target_currency_price = calculate_liquidity(base_currency, target_currency)
+                    except TypeError:
+                        liquidity_value, base_currency_price, target_currency_price = 0, 0, 0
+                        print(f"Error: Could not calculate liquidity for {currency_pair}.")
                     ticker_infodai.append({
                         'ticker_id': currency_pair,
                         'base_currency': base_currency,
                         'target_currency': target_currency,
                         'pool_id': basket_addr_dai,
                         'volume': volume,
-                        'liquidity_in_usd': result * volume,
+                        'base_volume': volume * base_currency_price,
+                        'target_volume': volume * target_currency_price,
+                        'liquidity_in_usd': liquidity_value,
                         'last_price': last,
                         'high': high,
                         'low': low,
@@ -611,13 +651,20 @@ def getmarkettickersnew(baskets, volblock, latestblock, ticker_infovrsc, ticker_
                         low = np.dot(weights, pair['low']) / np.sum(weights)
                         openn = np.dot(weights, pair['open']) / np.sum(weights)
                     base_currency, target_currency = currency_pair.split("_")
+                    try:
+                        liquidity_value, base_currency_price, target_currency_price = calculate_liquidity(base_currency, target_currency)
+                    except TypeError:
+                        liquidity_value, base_currency_price, target_currency_price = 0, 0, 0
+                        print(f"Error: Could not calculate liquidity for {currency_pair}.")
                     ticker_infoeth.append({
                         'ticker_id': currency_pair,
                         'base_currency': base_currency,
                         'target_currency': target_currency,
                         'pool_id': basket_addr_eth,
                         'volume': volume,
-                        'liquidity_in_usd': result * volume,
+                        'base_volume': volume * base_currency_price,
+                        'target_volume': volume * target_currency_price,
+                        'liquidity_in_usd': liquidity_value,
                         'last_price': last,
                         'high': high,
                         'low': low,
@@ -693,13 +740,20 @@ def getmarkettickersnew(baskets, volblock, latestblock, ticker_infovrsc, ticker_
                         low = np.dot(weights, pair['low']) / np.sum(weights)
                         openn = np.dot(weights, pair['open']) / np.sum(weights)
                     base_currency, target_currency = currency_pair.split("_")
+                    try:
+                        liquidity_value, base_currency_price, target_currency_price = calculate_liquidity(base_currency, target_currency)
+                    except TypeError:
+                        liquidity_value, base_currency_price, target_currency_price = 0, 0, 0
+                        print(f"Error: Could not calculate liquidity for {currency_pair}.")
                     ticker_infomkr.append({
                         'ticker_id': currency_pair,
                         'base_currency': base_currency,
                         'target_currency': target_currency,
                         'pool_id': basket_addr_mkr,
                         'volume': volume,
-                        'liquidity_in_usd': result * volume,
+                        'base_volume': volume * base_currency_price,
+                        'target_volume': volume * target_currency_price,
+                        'liquidity_in_usd': liquidity_value,
                         'last_price': last,
                         'high': high,
                         'low': low,
@@ -780,13 +834,20 @@ def getmarkettickersnew(baskets, volblock, latestblock, ticker_infovrsc, ticker_
                         low = np.dot(weights, pair['low']) / np.sum(weights)
                         openn = np.dot(weights, pair['open']) / np.sum(weights)
                     base_currency, target_currency = currency_pair.split("_")
+                    try:
+                        liquidity_value, base_currency_price, target_currency_price = calculate_liquidity(base_currency, target_currency)
+                    except TypeError:
+                        liquidity_value, base_currency_price, target_currency_price = 0, 0, 0
+                        print(f"Error: Could not calculate liquidity for {currency_pair}.")
                     ticker_infotbtc.append({
                         'ticker_id': currency_pair,
                         'base_currency': base_currency,
                         'target_currency': target_currency,
                         'pool_id': basket_addr_tbtc,
                         'volume': volume,
-                        'liquidity_in_usd': result * volume,
+                        'base_volume': volume * base_currency_price,
+                        'target_volume': volume * target_currency_price,
+                        'liquidity_in_usd': liquidity_value,
                         'last_price': last,
                         'high': high,
                         'low': low,
