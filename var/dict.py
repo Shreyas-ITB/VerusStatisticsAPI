@@ -27,10 +27,23 @@ arr_currencies = [
     {"currencyid": "iExBJfZYK7KREDpuhj6PzZBzqMAKaFg7d2", "ticker": "vARRR"},
     {"currencyid": "iSYJ5L91bURKemiuALK1uBUXad3ZKCpDX7", "ticker": "paxg.vETH"},
     {"currencyid": "i7eFvyL44S2iWz9EZjd6HTaBioFqhALcdi", "ticker": "xaut.vETH"},
-    {"currencyid": "iL62spNN42Vqdxh8H5nrfNe8d6Amsnfkdx", "ticker": "NATI.vETH"},
+    {"currencyid": "iL62spNN42Vqdxh8H5nrfNe8d6Amsnfkdx", "ticker": "NATI"},
     {"currencyid": "i4Xr5TAMrDTD99H69EemhjDxJ4ktNskUtc", "ticker": "Switch" },
     {"currencyid": "i9kVWKU2VwARALpbXn4RS9zvrhvNRaUibb", "ticker": "Kaiju"},
-    {"currencyid": "iHax5qYQGbcMGqJKKrPorpzUBX2oFFXGnY", "ticker": "PURE.vETH"},
+    {"currencyid": "iHax5qYQGbcMGqJKKrPorpzUBX2oFFXGnY", "ticker": "Pure"},
+    {"currencyid": "iD5WRg7jdQM1uuoVHsBCAEKfJCKGs1U3TB", "ticker": "Bridge.vARRR"},
+    {"currencyid": "i6j1rzjgrDhSmUYiTtp21J8Msiudv5hgt9", "ticker": "Bridge.vDEX"},
+    {"currencyid": "i3nokiCTVevZMLpR3VmZ7YDfCqA5juUqqH", "ticker": "Bridge.CHIPS"},
+    {"currencyid": "i6SapneNdvpkrLPgqPhDVim7Ljek3h2UQZ", "ticker": "SUPERNET"},
+    {"currencyid": "i9nLSK4S1U5sVMq4eJUHR1gbFALz56J9Lj", "ticker": "scrvUSD.vETH"},
+    {"currencyid": "iAik7rePReFq2t7LZMZhHCJ52fT5pisJ5C", "ticker": "vYIELD"},
+    {"currencyid": "iH37kRsdfoHtHK5TottP1Yfq8hBSHz9btw", "ticker": "NATI🦉"},
+    {"currencyid": "iHnYAmrS45Hb8GVgyzy7nVQtZ5vttJ9N3X", "ticker": "SUPERVRSC"},
+    {"currencyid": "iJ3WZocnjG9ufv7GKUA4LijQno5gTMb7tP", "ticker": "CHIPS"},
+    {"currencyid": "iHog9UCTrn95qpUBFCZ7kKz7qWdMA8MQ6N", "ticker": "vDEX"},
+    {"currencyid": "iFrFn9b6ctse7XBzcWkRbpYMAHoKjbYKqG", "ticker": "SUPER🛒"},
+    {"currencyid": "iCDjBN71SbSppgsNTpwwMBT69399DpV4hA", "ticker": "Kek🐸"},
+    {"currencyid": "i5VVBEi6efBrXMaeqFW3MTPSzbmpNLysGR", "ticker": "PEPE"},
 ]
 
 arr_token_contracts = {
@@ -45,3 +58,19 @@ arr_token_holders = [
     "0x71518580f36FeCEFfE0721F06bA4703218cD7F63",
     "0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7"
 ]
+
+COINGECKO_GETCURRENCYCONVERTERS_CURRENCY_FORMATS = {
+    "Bridge.vETH": ["VRSC", "DAI", "MKR", "ETH"],
+    "NATI🦉": ["VRSC", "TBTC", "ETH", "NATI.vETH"],
+    "Pure": ["VRSC", "TBTC"],
+    "SUPERVRSC": ["VRSC", "SUPERNET"],
+    "SUPER🛒": ["SUPERNET", "VRSC", "TBTC", "ETH", "ARRR", "DEX", "CHIPS", "scrvUSD"],
+    "vYIELD": ["VRSC", "scrvUSD"],
+    "Kaiju": ["VRSC", "USDT", "ETH", "TBTC"],
+    "Switch": ["VRSC", "DAI", "USDC", "EURC"],
+    "NATI": ["VRSC", "NATI.vETH"],
+    "Bridge.CHIPS": ["VRSC", "CHIPS"],
+    "Bridge.vARRR": ["VRSC", "ARRR", "BridgevETH", "TBTC"],
+    "Bridge.vDEX": ["VRSC", "DEX", "ETH", "DAI", "TBTC"],
+    "whales": ["VRSC"]
+}
