@@ -282,7 +282,7 @@ def calculate_liquidity(base_currency, target_currency):
         target_currency_price = 1.0 if target_currency in stablecoins else prices.get(target_currency, 0.0)
         base_currency_reserve = reserves.get(base_currency, 0.0)
         target_currency_reserve = reserves.get(target_currency, 0.0)
-        print(base_currency_price, target_currency_price)
+        #print(base_currency_price, target_currency_price)
 
         # Calculate the values
         base_currency_value =  base_currency_reserve * base_currency_price
