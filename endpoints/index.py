@@ -19,7 +19,7 @@ from functions.getaddressbalance import get_address_balance
 from functions.extracttransfers import extract_transfers
 from functions.getallbaskets import getallbaskets
 from functions.getcurrencyconverters import get_currencyconverters
-from functions.markettickers import getmarkettickers
+from functions.markettickers import getmarkettickers, getmarkettickersnew
 from functions.gettokenbalance import *
 from functions.gettokenprice import *
 from functions.getvolinfo import *
@@ -27,7 +27,7 @@ from functions.getcurrencyprices import *
 from functions.getdaivalue import get_dai_value
 from functions.getdefichain import getdefichain
 from functions.getethbalance import get_eth_balance
-from functions.savecachedata import cacheinfo
+from functions.savecachedata import cacheinfo, cacheinfonew, cacheinfo_newendpoint, cacheinfonew_newendpoint
 
 app = FastAPI()
 
@@ -565,9 +565,10 @@ def getdefichaininfo():
             "message": f"An unexpected error occurred: {str(e)}"
         }
 
-@app.get('/market/allTickers/new')
+@app.get('/market/allTickers/coingecko')
 def routegetalltickers():
     baskets, i_addresses = getallbaskets()
+    print(baskets, i_addresses)
     latestblock = latest_block()
     volblock = int(latestblock) - 1440
     timestamp = int(time.time() * 1000)
