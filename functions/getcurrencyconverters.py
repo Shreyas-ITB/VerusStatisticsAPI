@@ -295,7 +295,7 @@ def calculate_liquidity(base_currency, target_currency):
         smallest_value = min(base_currency_value, target_currency_value)
         result = smallest_value * 2
 
-        print(f"Smallest value multiplied by 2: {result}")
+        #print(f"Smallest value multiplied by 2: {result}")
         return result, base_currency_price, target_currency_price
     else:
         print("Fetching new data...")
